@@ -111,7 +111,8 @@ class IT1FacultyEvaluator:
             y_vals[r] = out_const[out_idx - 1]
 
         if np.sum(firing) == 0:
-            return np.nan, np.array([])
+            return out_const[0], np.array([])
+        
 
         y_crisp = np.sum(firing * y_vals) / np.sum(firing)
 
