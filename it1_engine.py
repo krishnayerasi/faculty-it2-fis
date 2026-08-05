@@ -1,19 +1,44 @@
 """
 it1_engine.py
-Type‑1 Sugeno Fuzzy Inference Engine for Faculty Performance Evaluation.
-Includes built‑in XAI (rule trace, membership breakdown, natural‑language explanation)
-with a confidence indicator based on maximum rule activation strength.
+Type-1 Sugeno Fuzzy Inference Engine for Faculty Performance Evaluation.
+
+Hierarchical two-stage FIS -- the Type-1 baseline in the IT1-vs-IT2
+comparison:
+    Stage 1: AM, SEP, CL             -> Teaching Score
+    Stage 2: Teaching Score, AC, RC  -> Performance Grade
+
+KPIs (0-100 scale): AM = Academic Management, SEP = Student Examination
+Performance, CL = Continuous Learning, AC = Activity Coordination,
+RC = Research Contribution.
+
+Rule base: 4 linguistic terms per antecedent, fully enumerated
+(4^3 = 64 rules per stage, 128 total). Production-ready with input
+validation and a built-in rule-trace explanation (XAI).
 """
 
-import numpy as np
+import math
+import warnings
 from typing import Dict, List, Tuple
+
+import numpy as np
 
 
 class IT1FacultyEvaluator:
     """Hierarchical Type‑1 Sugeno Fuzzy System for Faculty Evaluation."""
 
-    def __init__(self):
+    KPI_NAMES: Tuple[str, ...] = ('AM', 'SEP', 'CL', 'AC', 'RC')
+
+    def __init__(self, warn_on_clip: bool = True):
+        """
+        Args:
+            warn_on_clip: If True (default), warn whenever an input KPI
+                falls outside [0, 100] and gets clipped. Set False for
+                bulk/Monte Carlo runs (e.g. noise-robustness sweeps) where
+                out-of-domain samples are expected and a warning per
+                sample would just be noise.
+        """
         self.domain = (0, 100)
+        self.warn_on_clip = warn_on_clip
         self.mf_params = {
             'Low':       [0,   0,  25,  45],
             'Moderate':  [25, 45,  45,  65],
@@ -26,25 +51,24 @@ class IT1FacultyEvaluator:
         self.teach_labels = ['Low', 'Moderate', 'High', 'VeryHigh']
         self.master_labels = ['Poor', 'Fair', 'Good', 'VeryGood', 'Excellent']
 
-        # Build rule tables (monotonic expert consequent)
         self.rule_teach = self._build_rule_table(
-            weights=[1/3, 1/3, 1/3], num_output_levels=4, is_master=False
+            weights=[1/3, 1/3, 1/3], num_out=4, is_master=False
         )
         self.rule_master = self._build_rule_table(
-            weights=[0.25, 0.25, 0.50], num_output_levels=5, is_master=True
+            weights=[0.25, 0.25, 0.50], num_out=5, is_master=True
         )
 
-    # =====================================================================
-    # MEMBERSHIP FUNCTIONS
-    # =====================================================================
-
     def _membership(self, x: float, params: List[float]) -> float:
-        """Trapezoidal / triangular membership function."""
+        """
+        Trapezoidal membership, boundary-safe.
+        Checks flat top (b<=x<=c) BEFORE the outside test (x<=a or x>=d).
+        This matters for shoulder MFs where a==b or c==d.
+        """
         a, b, c, d = params
-        if x <= a or x >= d:
-            return 0.0
         if b <= x <= c:
             return 1.0
+        if x <= a or x >= d:
+            return 0.0
         if a < x < b:
             return (x - a) / (b - a)
         if c < x < d:
@@ -52,234 +76,190 @@ class IT1FacultyEvaluator:
         return 0.0
 
     def fuzzify(self, x: float) -> Dict[str, float]:
-        """Fuzzify a single input: return membership in all 4 terms."""
+        """Public: membership of x in each of the 4 linguistic terms."""
         return {
             name: round(self._membership(x, params), 4)
             for name, params in self.mf_params.items()
         }
 
-    # =====================================================================
-    # RULE TABLE CONSTRUCTION (monotonic)
-    # =====================================================================
+    def _term_memberships(self, x: float) -> np.ndarray:
+        """Membership of x in each term, as an array ordered like term_names.
+        Internal fast path for _infer: same math as fuzzify(), unrounded,
+        computed once per input instead of once per rule."""
+        return np.array([self._membership(x, self.mf_params[t]) for t in self.term_names])
+
+    def _validate_input(self, value: float, name: str) -> float:
+        """
+        Coerce to float, reject non-finite values, and clip to the KPI
+        domain. Without this, an out-of-domain or NaN value silently
+        drives every rule's firing strength to zero, and _infer() falls
+        back to a constant (the mean output level) instead of a value
+        grounded in the rule base.
+        """
+        value = float(value)
+        if not np.isfinite(value):
+            raise ValueError(f"{name}={value!r} is not a finite number.")
+        lo, hi = self.domain
+        if value < lo or value > hi:
+            clipped = min(max(value, lo), hi)
+            if self.warn_on_clip:
+                warnings.warn(
+                    f"{name}={value:.2f} is outside the KPI domain {self.domain}; "
+                    f"clipped to {clipped:.2f}.",
+                    stacklevel=3,
+                )
+            value = clipped
+        return value
 
     @staticmethod
     def _monotonic_consequent(idx_vec: np.ndarray, weights: np.ndarray,
-                              num_levels: int, is_master: bool) -> int:
-        """Monotonic rule consequent: weighted average -> round -> clamp."""
+                               num_levels: int, is_master: bool) -> int:
+        """
+        Maps a weighted average of antecedent term-indices (1..4) to a
+        consequent term-index (1..num_levels).
+
+        Uses standard round-half-up rather than numpy's round-half-to-even,
+        so the rule table doesn't silently depend on rounding convention.
+        (Verified against the current weights: this changes 0 of the 128
+        rule consequents today -- no rule lands on an exact .5 boundary --
+        but it removes that fragility if weights or level counts change.)
+        """
         wavg = np.sum(idx_vec * weights)
         if is_master:
             scaled = 1 + (wavg - 1) / 3 * (num_levels - 1)
         else:
             scaled = wavg
-        out_idx = int(np.round(scaled))
-        return max(1, min(out_idx, num_levels))
+        level = math.floor(scaled + 0.5)
+        return int(max(1, min(level, num_levels)))
 
-    def _build_rule_table(self, weights: List[float],
-                          num_output_levels: int,
-                          is_master: bool) -> np.ndarray:
-        """Build complete rule table by enumerating all 4^3 = 64 combinations."""
+    def _build_rule_table(self, weights: List[float], num_out: int, is_master: bool) -> np.ndarray:
+        """Fully enumerate the 4x4x4 = 64-rule table for one stage."""
         rules = []
         w = np.array(weights)
         for i1 in range(1, 5):
             for i2 in range(1, 5):
                 for i3 in range(1, 5):
-                    idx_vec = np.array([i1, i2, i3])
-                    out_idx = self._monotonic_consequent(
-                        idx_vec, w, num_output_levels, is_master
-                    )
-                    rules.append([i1, i2, i3, out_idx])
+                    out = self._monotonic_consequent(np.array([i1,i2,i3]), w, num_out, is_master)
+                    rules.append([i1, i2, i3, out])
         return np.array(rules, dtype=int)
 
-    # =====================================================================
-    # INFERENCE ENGINE
-    # =====================================================================
+    def _infer(self, x1: float, x2: float, x3: float,
+               rule_table: np.ndarray, out_const: List[float]) -> Tuple[float, np.ndarray]:
+        """
+        Sugeno inference over a fully-enumerated rule table.
 
-    def _infer_stage(self, x1: float, x2: float, x3: float,
-                     rule_table: np.ndarray, out_const: List[float]
-                     ) -> Tuple[float, np.ndarray]:
-        """Sugeno inference with rule trace."""
-        R = rule_table.shape[0]
-        firing = np.zeros(R)
-        y_vals = np.zeros(R)
+        Vectorized: membership is computed once per input (4 values each)
+        and gathered across all 64 rules via fancy indexing, instead of
+        recomputing membership per-rule inside a Python loop. Same result,
+        ~16x fewer membership evaluations per call and no per-rule
+        Python-level loop.
+        """
+        mu1 = self._term_memberships(x1)
+        mu2 = self._term_memberships(x2)
+        mu3 = self._term_memberships(x3)
 
-        for r in range(R):
-            i1, i2, i3, out_idx = rule_table[r]
-            mu1 = self._membership(x1, self.mf_params[self.term_names[i1-1]])
-            mu2 = self._membership(x2, self.mf_params[self.term_names[i2-1]])
-            mu3 = self._membership(x3, self.mf_params[self.term_names[i3-1]])
-            firing[r] = mu1 * mu2 * mu3
-            y_vals[r] = out_const[out_idx - 1]
+        i1, i2, i3, oi = rule_table[:, 0], rule_table[:, 1], rule_table[:, 2], rule_table[:, 3]
+        firing = mu1[i1 - 1] * mu2[i2 - 1] * mu3[i3 - 1]
+        y_vals = np.asarray(out_const, dtype=float)[oi - 1]
 
-        if np.sum(firing) == 0:
-            return out_const[0], np.array([])
-        
+        total_firing = firing.sum()
+        if total_firing == 0:
+            # Reachable only if inputs bypass evaluate()'s clipping and
+            # land entirely outside the domain.
+            return float(np.mean(out_const)), np.empty((0, 3))
 
-        y_crisp = np.sum(firing * y_vals) / np.sum(firing)
-
-        # Build trace: only active rules
+        y_crisp = float(np.sum(firing * y_vals) / total_firing)
         active = firing > 0
-        trace = np.column_stack([
-            np.where(active)[0] + 1,  # 1‑based rule index
-            firing[active],
-            y_vals[active]
-        ])
+        trace = np.column_stack([np.where(active)[0] + 1, firing[active], y_vals[active]])
         return y_crisp, trace
 
-    # =====================================================================
-    # HELPER METHODS
-    # =====================================================================
-
     @staticmethod
-    def _crisp_to_label(value: float, centers: List[float],
-                        labels: List[str]) -> str:
-        """Map a crisp value to the nearest linguistic label."""
-        idx = np.argmin(np.abs(np.array(centers) - value))
-        return labels[idx]
+    def _crisp_to_label(value: float, centers: List[float], labels: List[str]) -> str:
+        """Nearest-center label for a crisp output value."""
+        return labels[np.argmin(np.abs(np.array(centers) - value))]
 
     def _format_trace(self, trace: np.ndarray, rule_table: np.ndarray,
-                      out_const: List[float], term_names: List[str]) -> List[Dict]:
-        """Format a rule trace array into a list of dictionaries."""
+                       out_const: List[float], term_names: List[str]) -> List[Dict]:
+        """Turn a raw (rule_idx, firing, consequent) trace into a
+        firing-strength-sorted list for the explanation / XAI output."""
         if trace.size == 0:
             return []
-
-        # Sort by firing strength descending
         order = np.argsort(trace[:, 1])[::-1]
         trace = trace[order]
-
         rules = []
         for row in trace:
-            rule_idx = int(row[0]) - 1  # convert to 0‑based index
-            antecedents = rule_table[rule_idx, :3]
-            antecedents_str = [term_names[i-1] for i in antecedents]
+            ri = int(row[0]) - 1
+            ants = [term_names[i-1] for i in rule_table[ri, :3]]
             rules.append({
                 'rule_index': int(row[0]),
-                'antecedents': antecedents_str,
+                'antecedents': ants,
                 'firing_strength': round(float(row[1]), 4),
                 'consequent': round(float(row[2]), 2)
             })
         return rules
 
-    def _build_explanation(self, teach_score: float, teach_label: str,
-                           perf_grade: float, perf_label: str,
-                           stage1_rules: List[Dict],
-                           stage2_rules: List[Dict]) -> str:
-        """Build a natural‑language explanation with confidence indicator."""
-        lines = []
-        lines.append("=" * 60)
-        lines.append("FACULTY EVALUATION — IT1 (TYPE‑1)")
-        lines.append("=" * 60)
-        lines.append("")
-
-        # Stage 1
-        lines.append(f"📚 STAGE 1: Teaching Score = {teach_score:.1f} ({teach_label})")
-        if stage1_rules:
-            top = stage1_rules[0]
-            lines.append(f"   Top rule: IF AM is {top['antecedents'][0]}, "
-                         f"SEP is {top['antecedents'][1]}, "
-                         f"CL is {top['antecedents'][2]}")
-            lines.append(f"            THEN TeachingScore = {top['consequent']:.0f} "
-                         f"(strength: {top['firing_strength']:.3f})")
-        lines.append("")
-
-        # Stage 2
-        lines.append(f"🎓 STAGE 2: Performance Grade = {perf_grade:.1f} ({perf_label})")
-        lines.append("   Note: IT1 does not provide an uncertainty interval.")
-        if stage2_rules:
-            top = stage2_rules[0]
-            lines.append(f"   Top rule: IF TeachingScore is {top['antecedents'][0]}, "
-                         f"AC is {top['antecedents'][1]}, "
-                         f"RC is {top['antecedents'][2]}")
-            lines.append(f"            THEN PerformanceGrade = {top['consequent']:.0f} "
-                         f"(strength: {top['firing_strength']:.3f})")
-
-            # --- Confidence based on max firing strength ---
-            max_strength = max(r['firing_strength'] for r in stage2_rules)
-            if max_strength > 0.7:
+    def _build_explanation(self, ts: float, tl: str, pg: float, pl: str,
+                            s1r: List[Dict], s2r: List[Dict]) -> str:
+        lines = ["=" * 60, "FACULTY EVALUATION — IT1 (TYPE‑1)", "=" * 60, "",
+                 f"📚 STAGE 1: Teaching Score = {ts:.1f} ({tl})"]
+        if s1r:
+            top = s1r[0]
+            lines.append(f"   Top rule: IF AM={top['antecedents'][0]}, SEP={top['antecedents'][1]}, CL={top['antecedents'][2]}")
+            lines.append(f"            → {top['consequent']:.0f} (μ={top['firing_strength']:.3f})")
+        lines.extend(["", f"🎓 STAGE 2: Performance Grade = {pg:.1f} ({pl})",
+                      "   Note: IT1 provides no uncertainty interval."])
+        if s2r:
+            top = s2r[0]
+            lines.append(f"   Top rule: IF Teach={top['antecedents'][0]}, AC={top['antecedents'][1]}, RC={top['antecedents'][2]}")
+            lines.append(f"            → {top['consequent']:.0f} (μ={top['firing_strength']:.3f})")
+            max_mu = max(r['firing_strength'] for r in s2r)
+            if max_mu > 0.7:
                 conf = "High"
-            elif max_strength > 0.4:
+            elif max_mu > 0.4:
                 conf = "Moderate"
             else:
                 conf = "Low"
-            lines.append(f"   Confidence (max rule strength): {conf} (μ_max = {max_strength:.3f})")
-
+            lines.append(f"   Confidence (max rule strength): {conf} (μ_max = {max_mu:.3f})")
         lines.append("=" * 60)
         return "\n".join(lines)
 
-    # =====================================================================
-    # MAIN EVALUATION METHOD
-    # =====================================================================
-
-    def evaluate(self, AM: float, SEP: float, CL: float,
-                 AC: float, RC: float) -> Dict:
+    def evaluate(self, AM: float, SEP: float, CL: float, AC: float, RC: float) -> Dict:
         """
-        Evaluate a single faculty profile and return complete results with XAI.
+        Evaluate one faculty profile.
+
+        KPIs are 0-100 (see module docstring for what each stands for).
+        Out-of-domain values are clipped into range (see warn_on_clip);
+        non-finite values (NaN/inf) raise ValueError.
         """
-        AM = float(AM)
-        SEP = float(SEP)
-        CL = float(CL)
-        AC = float(AC)
-        RC = float(RC)
-
-        # Stage 1: TeachingScore
-        teach_score, trace1 = self._infer_stage(
-            AM, SEP, CL, self.rule_teach, self.teach_out
-        )
-        teach_label = self._crisp_to_label(teach_score, self.teach_out, self.teach_labels)
-
-        # Stage 2: PerformanceGrade
-        perf_grade, trace2 = self._infer_stage(
-            teach_score, AC, RC, self.rule_master, self.master_out
-        )
-        perf_label = self._crisp_to_label(perf_grade, self.master_out, self.master_labels)
-
-        # Fuzzify all inputs
-        memberships = {
-            'AM':  self.fuzzify(AM),
-            'SEP': self.fuzzify(SEP),
-            'CL':  self.fuzzify(CL),
-            'AC':  self.fuzzify(AC),
-            'RC':  self.fuzzify(RC)
-        }
-
-        # Format rule traces
-        stage1_rules = self._format_trace(trace1, self.rule_teach,
-                                          self.teach_out, self.term_names)
-        stage2_rules = self._format_trace(trace2, self.rule_master,
-                                          self.master_out, self.term_names)
-
-        # Build explanation
-        explanation = self._build_explanation(
-            teach_score, teach_label, perf_grade, perf_label,
-            stage1_rules, stage2_rules
-        )
-
+        AM, SEP, CL, AC, RC = [
+            self._validate_input(v, n) for v, n in zip((AM, SEP, CL, AC, RC), self.KPI_NAMES)
+        ]
+        ts, t1 = self._infer(AM, SEP, CL, self.rule_teach, self.teach_out)
+        tl = self._crisp_to_label(ts, self.teach_out, self.teach_labels)
+        pg, t2 = self._infer(ts, AC, RC, self.rule_master, self.master_out)
+        pl = self._crisp_to_label(pg, self.master_out, self.master_labels)
+        mems = {k: self.fuzzify(v) for k, v in zip(self.KPI_NAMES, [AM, SEP, CL, AC, RC])}
+        s1r = self._format_trace(t1, self.rule_teach, self.teach_out, self.term_names)
+        s2r = self._format_trace(t2, self.rule_master, self.master_out, self.term_names)
+        expl = self._build_explanation(ts, tl, pg, pl, s1r, s2r)
         return {
-            'TeachingScore': round(teach_score, 2),
-            'TeachingLabel': teach_label,
-            'PerformanceGrade': round(perf_grade, 2),
-            'PerformanceLabel': perf_label,
-            'Stage1_Rules': stage1_rules,
-            'Stage2_Rules': stage2_rules,
-            'Memberships': memberships,
-            'Explanation': explanation
+            'TeachingScore': round(ts, 2),
+            'TeachingLabel': tl,
+            'PerformanceGrade': round(pg, 2),
+            'PerformanceLabel': pl,
+            'Stage1_Rules': s1r,
+            'Stage2_Rules': s2r,
+            'Memberships': mems,
+            'Explanation': expl
         }
 
+    def __repr__(self) -> str:
+        return (f"IT1FacultyEvaluator(domain={self.domain}, "
+                f"rules={len(self.rule_teach)}+{len(self.rule_master)}, "
+                f"warn_on_clip={self.warn_on_clip})")
 
-# =====================================================================
-# SELF‑TEST (runs when file is executed directly)
-# =====================================================================
+
 if __name__ == "__main__":
     evaluator = IT1FacultyEvaluator()
-    result = evaluator.evaluate(AM=72, SEP=58, CL=85, AC=60, RC=90)
-
+    result = evaluator.evaluate(AM=80, SEP=70, CL=90, AC=60, RC=75)
     print(result['Explanation'])
-    print(f"\nTeachingScore: {result['TeachingScore']} ({result['TeachingLabel']})")
-    print(f"PerformanceGrade: {result['PerformanceGrade']} ({result['PerformanceLabel']})")
-    print("\nSTAGE 1 FIRED RULES:")
-    for r in result['Stage1_Rules']:
-        print(f"  Rule {r['rule_index']:2d}: {r['antecedents']} "
-              f"→ {r['consequent']:.0f} (μ={r['firing_strength']:.4f})")
-    print("\nSTAGE 2 FIRED RULES:")
-    for r in result['Stage2_Rules']:
-        print(f"  Rule {r['rule_index']:2d}: {r['antecedents']} "
-              f"→ {r['consequent']:.0f} (μ={r['firing_strength']:.4f})")
