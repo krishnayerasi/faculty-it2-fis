@@ -95,7 +95,9 @@ class IT2FacultyEvaluator:
             mL2,mU2=self._it2mf(x2,self.mf_set[self.term_names[i2-1]]['umf'],self.mf_set[self.term_names[i2-1]]['lmf'])
             mL3,mU3=self._it2mf(x3,self.mf_set[self.term_names[i3-1]]['umf'],self.mf_set[self.term_names[i3-1]]['lmf'])
             fL[r]=mL1*mL2*mL3; fU[r]=mU1*mU2*mU3; y[r]=oc[oi-1]
-        if np.all(fU==0): return np.nan, np.nan, np.nan, np.array([])
+        if np.all(fU==0):
+            val = out_const[0]
+            return val, val, val, np.array([])
         yL=self._km(y,fL,fU,'L'); yR=self._km(y,fL,fU,'R')
         yc=(yL+yR)/2
         fNT=(fL+fU)/2; active=fNT>0
