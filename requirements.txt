@@ -1,9 +1,0 @@
-# Version ranges (not exact pins) so `pip install -r requirements.txt`
-# keeps working on current Python releases. The old exact pin
-# numpy==1.24.3 has no prebuilt wheel for Python 3.12+ and fails to
-# build from source there (setuptools/pkgutil incompatibility) --
-# numpy>=1.26 is the first release with 3.12 wheels, and it1_engine.py
-# / it2_engine.py use no APIs that changed under numpy 2.x.
-flask>=3.0,<4.0
-numpy>=1.26,<3.0
-gunicorn>=21.2,<22.0
