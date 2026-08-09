@@ -1,0 +1,38 @@
+========================================
+ IT2 SYSTEM SUMMARY REPORT
+ FOU_delta = 6
+========================================
+
+Rule Coverage:
+  Stage-1: 64/64 rules fire correctly
+  Stage-2: 64/64 rules fire correctly
+
+Output Distribution:
+  TeachingScore  - Mean: 66.23, Std: 7.05, Min: 45.14, Max: 85.00, Skew: 0.25, Kurt: 3.53
+  PerformanceGrade - Mean: 79.15, Std: 10.56, Min: 41.26, Max: 95.00, Skew: -0.91, Kurt: 3.14
+  Interval Width - Mean: 14.382, Max: 33.287, Min: -0.000, Std: 5.366
+
+Sensitivity Ranges:
+  AM: min=77.95, max=83.84, range=5.89
+  AC: min=74.11, max=88.33, range=14.22
+  SEP: min=77.72, max=83.54, range=5.82
+  RC: min=53.84, max=86.66, range=32.82
+  CL: min=81.44, max=86.48, range=5.04
+
+Monotonicity (max violations):
+  AM: max viol = 0.1246
+  SEP: max viol = 0.1004
+  CL: max viol = 0.0000
+  AC: max viol = 0.0000
+  RC: max viol = 1.3493
+
+Face Validation:
+  Stage-1: 9/10 PASS
+  Stage-2: 8/10 PASS
+
+Correlation with PerformanceGrade:
+  AM: r=0.147
+  AC: r=0.359
+  SEP: r=0.025
+  RC: r=0.858
+  CL: r=0.111

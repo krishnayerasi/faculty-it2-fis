@@ -1,0 +1,11 @@
+AM,SEP,CL,AC,RC,TeachingScore,PerformanceGrade,Description
+30,30,30,50,95,46.25,54.44921875,"Strong research, weak teaching"
+95,95,95,50,20,65,71,"Strong teaching, weak research"
+0,0,0,0,0,20,25,"All zeros"
+100,100,100,100,100,85,95,"All 100s"
+50,50,50,50,50,48.125,59.087890625,"All 50s"
+100,0,0,0,100,65,50,"Extreme AM+RC"
+0,100,100,100,0,45,83,"Extreme SEP/CL/AC"
+65,65,65,65,65,65,83,"Boundary 65s"
+45,45,45,45,45,45,50,"Boundary 45s"
+20,80,40,60,70,45,76,"Mixed mid-range"

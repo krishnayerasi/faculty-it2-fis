@@ -1,0 +1,31 @@
+========================================
+ IT1 SYSTEM SUMMARY REPORT
+========================================
+
+Rule Coverage:
+  Stage-1: 64/64 rules fire correctly
+  Stage-2: 64/64 rules fire correctly
+
+Output Distribution:
+  TeachingScore  - Mean: 66.80, Std: 7.64, Min: 45.00, Max: 85.00, Skew: 0.42, Kurt: 3.86
+  PerformanceGrade - Mean: 80.02, Std: 10.92, Min: 44.42, Max: 95.00, Skew: -0.92, Kurt: 3.40
+
+Sensitivity Ranges:
+  AM: min=76.38, max=83.74, range=7.36
+  AC: min=75.50, max=89.38, range=13.87
+  SEP: min=76.06, max=83.48, range=7.41
+  RC: min=50.95, max=83.67, range=32.72
+  CL: min=81.99, max=88.51, range=6.52
+
+Monotonicity: All inputs PASS
+
+Face Validation:
+  Stage-1: 9/10 PASS
+  Stage-2: 8/10 PASS
+
+Correlation with PerformanceGrade:
+  AM: r=0.139
+  AC: r=0.371
+  SEP: r=0.050
+  RC: r=0.851
+  CL: r=0.126

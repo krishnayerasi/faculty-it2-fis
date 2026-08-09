@@ -1,0 +1,316 @@
+% =========================================================================
+% IT1_SYSTEM.m
+% Type-1 Hierarchical Sugeno Fuzzy System for Faculty Evaluation
+% Complete validation: output distribution, sensitivity, monotonicity, 
+% face validation, correlation analysis
+% =========================================================================
+clear; clc; close all;
+
+%% 1. GENERATE SYNTHETIC DATASET (1000 faculty profiles)
+rng(42);
+N = 1000;
+
+% Academic Merit (AM) and Administrative Contribution (AC)
+AM = min(100, max(0, normrnd(75, 15, [N, 1])));
+AC = min(100, max(0, normrnd(65, 20, [N, 1])));
+
+% Student Evaluation of Performance (SEP) - 40/40/20 rubric
+PassRate   = normrnd(85, 10, [N, 1]);
+AvgMarks   = normrnd(80, 10, [N, 1]);
+Improvement = normrnd(70, 15, [N, 1]);
+SEP = min(100, max(0, 0.40*PassRate + 0.40*AvgMarks + 0.20*Improvement));
+
+% Research Contribution (RC) - binary checklist items
+Q1 = randi([0 1], N, 1) * 30; Q2 = randi([0 1], N, 1) * 25;
+ScopusNonQ = randi([0 1], N, 1) * 10; FundedPI = randi([0 1], N, 1) * 30;
+PatGranted = randi([0 1], N, 1) * 30; PatFiled = randi([0 1], N, 1) * 10;
+PhDs = randi([0 1], N, 1) * 20; Citations = randi([0 1], N, 1) * 10;
+RC = min(100, Q1+Q2+ScopusNonQ+FundedPI+PatGranted+PatFiled+PhDs+Citations);
+
+% Continuous Learning (CL) - binary checklist items
+FDP_long  = randi([0 1], N, 1) * 20; FDP_short = randi([0 1], N, 1) * 10;
+MOOCs     = randi([0 1], N, 1) * 10; Pedagogy  = randi([0 1], N, 1) * 10;
+Industry  = randi([0 1], N, 1) * 15; NewCourse = randi([0 1], N, 1) * 20;
+NewTool   = randi([0 1], N, 1) * 10;
+CL = min(100, FDP_long+FDP_short+MOOCs+Pedagogy+Industry+NewCourse+NewTool);
+
+SyntheticData = [AM, AC, SEP, RC, CL];
+InputNames = {'AM', 'AC', 'SEP', 'RC', 'CL'};
+
+%% 2. BUILD HIERARCHICAL IT1 FIS
+
+% Membership function parameters
+mfLow      = [0  0  25 45];
+mfModerate = [25 45 65];
+mfHigh     = [45 65 85];
+mfVeryHigh = [65 85 100 100];
+
+% ---- Stage 1: Teaching Score FIS (AM, SEP, CL -> TeachingScore) ----
+fis_Teach = sugfis('Name', 'Stage1_Teaching');
+
+% Add inputs
+fis_Teach = addInput(fis_Teach, [0 100], 'Name', 'AM');
+fis_Teach = addInput(fis_Teach, [0 100], 'Name', 'SEP');
+fis_Teach = addInput(fis_Teach, [0 100], 'Name', 'CL');
+
+% Add membership functions for each input
+input_names_teach = {'AM', 'SEP', 'CL'};
+for i = 1:3
+    fis_Teach = addMF(fis_Teach, input_names_teach{i}, 'trapmf', mfLow, 'Name', 'Low');
+    fis_Teach = addMF(fis_Teach, input_names_teach{i}, 'trimf', mfModerate, 'Name', 'Moderate');
+    fis_Teach = addMF(fis_Teach, input_names_teach{i}, 'trimf', mfHigh, 'Name', 'High');
+    fis_Teach = addMF(fis_Teach, input_names_teach{i}, 'trapmf', mfVeryHigh, 'Name', 'VeryHigh');
+end
+
+% Add output with constant MFs
+fis_Teach = addOutput(fis_Teach, [0 100], 'Name', 'TeachingScore');
+fis_Teach = addMF(fis_Teach, 'TeachingScore', 'constant', 20, 'Name', 'Low');
+fis_Teach = addMF(fis_Teach, 'TeachingScore', 'constant', 45, 'Name', 'Moderate');
+fis_Teach = addMF(fis_Teach, 'TeachingScore', 'constant', 65, 'Name', 'High');
+fis_Teach = addMF(fis_Teach, 'TeachingScore', 'constant', 85, 'Name', 'VeryHigh');
+
+% Generate monotonic rule base (4^3 = 64 rules)
+ruleList_Teach = zeros(64, 6);
+r = 0;
+for a = 1:4
+    for s = 1:4
+        for c = 1:4
+            r = r + 1;
+            outIdx = monotonicConsequent([a s c], [1/3 1/3 1/3], 4, false);
+            ruleList_Teach(r, :) = [a s c outIdx 1 1];
+        end
+    end
+end
+fis_Teach = addRule(fis_Teach, ruleList_Teach);
+
+% ---- Stage 2: Master Grading FIS (TeachingScore, AC, RC -> PerformanceGrade) ----
+fis_Master = sugfis('Name', 'FinalStage_Master');
+
+fis_Master = addInput(fis_Master, [0 100], 'Name', 'TeachingScore');
+fis_Master = addInput(fis_Master, [0 100], 'Name', 'AC');
+fis_Master = addInput(fis_Master, [0 100], 'Name', 'RC');
+
+input_names_master = {'TeachingScore', 'AC', 'RC'};
+for i = 1:3
+    fis_Master = addMF(fis_Master, input_names_master{i}, 'trapmf', mfLow, 'Name', 'Low');
+    fis_Master = addMF(fis_Master, input_names_master{i}, 'trimf', mfModerate, 'Name', 'Moderate');
+    fis_Master = addMF(fis_Master, input_names_master{i}, 'trimf', mfHigh, 'Name', 'High');
+    fis_Master = addMF(fis_Master, input_names_master{i}, 'trapmf', mfVeryHigh, 'Name', 'VeryHigh');
+end
+
+fis_Master = addOutput(fis_Master, [0 100], 'Name', 'PerformanceGrade');
+fis_Master = addMF(fis_Master, 'PerformanceGrade', 'constant', 25, 'Name', 'Poor');
+fis_Master = addMF(fis_Master, 'PerformanceGrade', 'constant', 50, 'Name', 'Fair');
+fis_Master = addMF(fis_Master, 'PerformanceGrade', 'constant', 67, 'Name', 'Good');
+fis_Master = addMF(fis_Master, 'PerformanceGrade', 'constant', 83, 'Name', 'VeryGood');
+fis_Master = addMF(fis_Master, 'PerformanceGrade', 'constant', 95, 'Name', 'Excellent');
+
+% Research-weighted rule base [0.25, 0.25, 0.50]
+w = [0.25 0.25 0.50];
+ruleList_Master = zeros(64, 6);
+r = 0;
+for t = 1:4
+    for ac = 1:4
+        for rc = 1:4
+            r = r + 1;
+            outIdx = monotonicConsequent([t ac rc], w, 5, true);
+            ruleList_Master(r, :) = [t ac rc outIdx 1 1];
+        end
+    end
+end
+fis_Master = addRule(fis_Master, ruleList_Master);
+
+%% 3. EVALUATE ALL 1000 FACULTY PROFILES
+Stage1_Data = [AM, SEP, CL];
+TeachingScores_IT1 = evalfis(fis_Teach, Stage1_Data);
+Master_Data = [TeachingScores_IT1, AC, RC];
+PerformanceGrades_IT1 = evalfis(fis_Master, Master_Data);
+
+%% 4. OUTPUT DISTRIBUTION ANALYSIS
+fprintf('\n========== IT1 OUTPUT DISTRIBUTION ==========\n');
+fprintf('TeachingScore:  Mean=%.2f, Std=%.2f, Min=%.2f, Max=%.2f, Skew=%.2f\n', ...
+    mean(TeachingScores_IT1), std(TeachingScores_IT1), ...
+    min(TeachingScores_IT1), max(TeachingScores_IT1), skewness(TeachingScores_IT1));
+fprintf('PerformanceGrade: Mean=%.2f, Std=%.2f, Min=%.2f, Max=%.2f, Skew=%.2f\n', ...
+    mean(PerformanceGrades_IT1), std(PerformanceGrades_IT1), ...
+    min(PerformanceGrades_IT1), max(PerformanceGrades_IT1), skewness(PerformanceGrades_IT1));
+
+% Histogram
+figure('Color','w');
+subplot(1,2,1);
+histogram(TeachingScores_IT1, 20, 'FaceColor', [0.2 0.5 0.8]);
+xlabel('TeachingScore'); ylabel('Frequency'); title('IT1 TeachingScore Distribution');
+subplot(1,2,2);
+histogram(PerformanceGrades_IT1, 20, 'FaceColor', [0.8 0.4 0.2]);
+xlabel('PerformanceGrade'); ylabel('Frequency'); title('IT1 PerformanceGrade Distribution');
+exportgraphics(gcf, 'IT1_OutputDistribution.png', 'Resolution', 300);
+
+%% 5. SENSITIVITY ANALYSIS (one input at a time)
+baseline = mean(SyntheticData, 1);
+sweepVals = linspace(0, 100, 21);
+sensResults = zeros(length(sweepVals), 5);
+
+fprintf('\n--- Sensitivity Analysis ---\n');
+for varIdx = 1:5
+    for k = 1:length(sweepVals)
+        pt = baseline;
+        pt(varIdx) = sweepVals(k);
+        T_s = evalfis(fis_Teach, [pt(1) pt(3) pt(5)]);
+        PG_s = evalfis(fis_Master, [T_s pt(2) pt(4)]);
+        sensResults(k, varIdx) = PG_s;
+    end
+    fprintf('%s: min=%.2f, max=%.2f, range=%.2f\n', ...
+        InputNames{varIdx}, min(sensResults(:,varIdx)), ...
+        max(sensResults(:,varIdx)), max(sensResults(:,varIdx))-min(sensResults(:,varIdx)));
+end
+
+% Monotonicity check
+fprintf('\n--- Monotonicity Check ---\n');
+for varIdx = [1 3 5 2 4]  % AM, SEP, CL, AC, RC
+    d = diff(sensResults(:, varIdx));
+    isMono = all(d >= -1e-6);
+    fprintf('%s: %s\n', InputNames{varIdx}, ternaryStr(isMono));
+end
+
+% Sensitivity plot
+figure('Color','w');
+colors = lines(5); hold on;
+for i = 1:5
+    plot(sweepVals, sensResults(:,i), '-o', 'Color', colors(i,:), ...
+        'LineWidth', 1.5, 'DisplayName', InputNames{i});
+end
+xlabel('Input Value'); ylabel('PerformanceGrade');
+title('IT1 Sensitivity Analysis'); legend('Location','best'); grid on;
+exportgraphics(gcf, 'IT1_Sensitivity.png', 'Resolution', 300);
+
+%% 6. FACE VALIDATION (10 Edge Cases)
+edgeCases = [
+    30 30 30  50  95;    % Case 1
+    95 95 95  50  20;    % Case 2
+     0  0  0   0   0;    % Case 3
+   100 100 100 100 100;  % Case 4
+    50 50 50  50  50;    % Case 5
+   100  0  0   0  100;   % Case 6
+     0 100 100 100   0;  % Case 7
+    65 65 65  65  65;    % Case 8
+    45 45 45  45  45;    % Case 9
+    20 80 40  60  70];   % Case 10
+
+edgeLabels = {'Strong research, weak teaching', 'Strong teaching, weak research', ...
+    'All zeros', 'All 100s', 'All 50s', 'Extreme AM+RC', ...
+    'Extreme SEP/CL/AC', 'Boundary 65s', 'Boundary 45s', 'Mixed mid-range'};
+
+teachOut = [20 45 65 85]; masterOut = [25 50 67 83 95];
+teachLabels = {'Low','Moderate','High','VeryHigh'};
+masterLabels = {'Poor','Fair','Good','VeryGood','Excellent'};
+mfMidpoints = [12.5 45 65 92.5];
+
+fprintf('\n--- Face Validation ---\n');
+pass1 = 0; pass2 = 0;
+for i = 1:10
+    T_e = evalfis(fis_Teach, edgeCases(i,[1 3 5]));
+    PG_e = evalfis(fis_Master, [T_e edgeCases(i,2) edgeCases(i,4)]);
+    
+    % Expected labels (from rule consequent)
+    idxAM = nearestIndex(edgeCases(i,1), mfMidpoints);
+    idxSEP = nearestIndex(edgeCases(i,3), mfMidpoints);
+    idxCL = nearestIndex(edgeCases(i,5), mfMidpoints);
+    expTeach = monotonicConsequent([idxAM idxSEP idxCL], [1/3 1/3 1/3], 4, false);
+    idxAC = nearestIndex(edgeCases(i,2), mfMidpoints);
+    idxRC = nearestIndex(edgeCases(i,4), mfMidpoints);
+    expMaster = monotonicConsequent([expTeach idxAC idxRC], w, 5, true);
+    
+    obtTeach = nearestIndex(T_e, teachOut);
+    obtMaster = nearestIndex(PG_e, masterOut);
+    
+    tPass = (expTeach == obtTeach); mPass = (expMaster == obtMaster);
+    if tPass, pass1 = pass1 + 1; end
+    if mPass, pass2 = pass2 + 1; end
+    
+    fprintf('Case %d (%s): Teach=%.1f (%s/%s) %s | Grade=%.1f (%s/%s) %s\n', ...
+        i, edgeLabels{i}, T_e, teachLabels{expTeach}, teachLabels{obtTeach}, ...
+        ternaryStr(tPass), PG_e, masterLabels{expMaster}, masterLabels{obtMaster}, ternaryStr(mPass));
+end
+fprintf('Face Validation: Stage1=%d/10, Stage2=%d/10\n', pass1, pass2);
+
+%% 7. CORRELATION ANALYSIS
+AllVars = [SyntheticData, TeachingScores_IT1, PerformanceGrades_IT1];
+AllNames = [InputNames, {'TeachingScore','PerformanceGrade'}];
+R = corr(AllVars);
+fprintf('\n--- Correlation with PerformanceGrade ---\n');
+for i = 1:5
+    fprintf('%s: r=%.3f\n', InputNames{i}, R(i,7));
+end
+
+figure('Color','w');
+heatmap(AllNames, AllNames, round(R,2), 'Title', 'IT1 Correlation Heatmap', 'Colormap', parula);
+exportgraphics(gcf, 'IT1_CorrelationHeatmap.png', 'Resolution', 300);
+
+%% 8. SAVE RESULTS
+save('IT1_Results.mat', 'TeachingScores_IT1', 'PerformanceGrades_IT1', ...
+    'AM', 'AC', 'SEP', 'RC', 'CL', 'SyntheticData', 'InputNames');
+writetable(array2table([SyntheticData, TeachingScores_IT1, PerformanceGrades_IT1], ...
+    'VariableNames', [InputNames, {'TeachingScore','PerformanceGrade'}]), 'IT1_Dataset.csv');
+
+fprintf('\n=== IT1 System Complete ===\n');
+
+% =========================================================================
+% LOCAL FUNCTIONS
+% =========================================================================
+
+function outIdx = monotonicConsequent(idxVec, weights, numLevels, isMasterScale)
+    % Monotonic rule consequent: weighted average -> round -> clamp
+    idxVec = idxVec(:)'; weights = weights(:)';
+    wavg = sum(idxVec .* weights);
+    if isMasterScale
+        scaled = 1 + (wavg - 1) / 3 * (numLevels - 1);
+    else
+        scaled = wavg;
+    end
+    outIdx = min(max(round(scaled), 1), numLevels);
+end
+
+function s = ternaryStr(cond)
+    if cond, s = 'PASS'; else, s = 'FAIL'; end
+end
+
+function idx = nearestIndex(val, centers)
+    [~, idx] = min(abs(val - centers));
+end
+% Ensure output directory exists on PC (Documents/IT1_Outputs)
+outDir = fullfile(getenv('USERPROFILE'), 'Documents', 'IT1_Outputs');
+if ~exist(outDir, 'dir'), mkdir(outDir); end
+
+% Move previously exported images and saved files into outDir if they exist
+filesToMove = { 'IT1_OutputDistribution.png', 'IT1_Sensitivity.png', 'IT1_CorrelationHeatmap.png', ...
+                'IT1_Results.mat', 'IT1_Dataset.csv' };
+for i = 1:numel(filesToMove)
+    if exist(filesToMove{i}, 'file')
+        try
+            movefile(filesToMove{i}, fullfile(outDir, filesToMove{i}));
+        catch
+            % If move fails, attempt copy then delete original
+            copyfile(filesToMove{i}, fullfile(outDir, filesToMove{i}));
+            delete(filesToMove{i});
+        end
+    end
+end
+
+% Also save current figures (if still open) into outDir with unique names
+figs = findall(0, 'Type', 'figure');
+for i = 1:numel(figs)
+    fname = sprintf('Figure_%02d.png', figs(i).Number);
+    try
+        exportgraphics(figs(i), fullfile(outDir, fname), 'Resolution', 300);
+    catch
+        saveas(figs(i), fullfile(outDir, fname));
+    end
+end
+
+% Save final results again into outDir to ensure presence
+save(fullfile(outDir, 'IT1_Results.mat'), 'TeachingScores_IT1', 'PerformanceGrades_IT1', ...
+    'AM', 'AC', 'SEP', 'RC', 'CL', 'SyntheticData', 'InputNames');
+writetable(array2table([SyntheticData, TeachingScores_IT1, PerformanceGrades_IT1], ...
+    'VariableNames', [InputNames, {'TeachingScore','PerformanceGrade'}]), fullfile(outDir, 'IT1_Dataset.csv'));
+
+fprintf('All outputs saved to: %s\n', outDir);
