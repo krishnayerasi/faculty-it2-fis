@@ -1,0 +1,192 @@
+/* ══════════════════════════════════════════════════════════
+   STYLE.CSS — Premium AI Dashboard Design System
+   ══════════════════════════════════════════════════════════ */
+
+:root {
+    --bg-primary: #f8fafc;
+    --bg-secondary: #ffffff;
+    --bg-glass: rgba(255,255,255,0.65);
+    --bg-glass-strong: rgba(255,255,255,0.85);
+    --text-primary: #0f172a;
+    --text-secondary: #475569;
+    --text-tertiary: #94a3b8;
+    --border-color: rgba(226,232,240,0.8);
+    --border-glass: rgba(255,255,255,0.3);
+    --shadow-sm: 0 1px 2px rgba(0,0,0,0.04);
+    --shadow: 0 4px 6px -1px rgba(0,0,0,0.07), 0 2px 4px -2px rgba(0,0,0,0.05);
+    --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.08), 0 4px 6px -4px rgba(0,0,0,0.04);
+    --shadow-xl: 0 20px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.04);
+    --shadow-glass: 0 8px 32px rgba(0,0,0,0.06);
+    --primary: #2563eb;
+    --primary-dark: #1d4ed8;
+    --primary-light: #dbeafe;
+    --it1-color: #ea580c;
+    --it1-bg: #fff7ed;
+    --it2-color: #059669;
+    --it2-bg: #ecfdf5;
+    --success: #16a34a;
+    --warning: #f59e0b;
+    --danger: #dc2626;
+    --radius-sm: 10px;
+    --radius: 16px;
+    --radius-lg: 24px;
+    --radius-xl: 32px;
+    --transition: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    --font-display: 'Space Grotesk', var(--font-sans);
+}
+
+[data-theme="dark"] {
+    --bg-primary: #0f172a;
+    --bg-secondary: #1e293b;
+    --bg-glass: rgba(30,41,59,0.7);
+    --bg-glass-strong: rgba(30,41,59,0.9);
+    --text-primary: #f1f5f9;
+    --text-secondary: #94a3b8;
+    --text-tertiary: #64748b;
+    --border-color: rgba(51,65,85,0.6);
+    --border-glass: rgba(255,255,255,0.08);
+    --shadow-sm: 0 1px 2px rgba(0,0,0,0.2);
+    --shadow: 0 4px 6px rgba(0,0,0,0.3);
+    --shadow-lg: 0 10px 15px rgba(0,0,0,0.4);
+    --shadow-xl: 0 20px 25px rgba(0,0,0,0.5);
+    --shadow-glass: 0 8px 32px rgba(0,0,0,0.3);
+}
+
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth;font-size:16px}
+body{font-family:var(--font-sans);background:var(--bg-primary);color:var(--text-primary);line-height:1.6;-webkit-font-smoothing:antialiased;overflow-x:hidden;transition:background var(--transition),color var(--transition)}
+
+/* Three.js canvas */
+#bg-canvas{position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none;opacity:0.4}
+
+/* Glass effect */
+.glass{background:var(--bg-glass);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:1px solid var(--border-glass);box-shadow:var(--shadow-glass);transition:all var(--transition);transform:translateZ(0)}
+.glass-strong{background:var(--bg-glass-strong);backdrop-filter:blur(30px);-webkit-backdrop-filter:blur(30px)}
+
+/* Navigation */
+.navbar{position:fixed;top:16px;left:50%;transform:translateX(-50%);width:calc(100% - 40px);max-width:1200px;z-index:1000;border-radius:var(--radius-lg);padding:14px 24px}
+.nav-container{display:flex;align-items:center;justify-content:space-between;gap:24px}
+.nav-brand{display:flex;align-items:center;gap:12px}
+.nav-logo-badge{display:flex;align-items:center;justify-content:center;flex-shrink:0;width:42px;height:42px;border-radius:12px;background:#ffffff;border:1px solid var(--border-glass);box-shadow:0 2px 8px rgba(0,0,0,0.12);padding:4px;overflow:hidden}
+.nav-logo{height:100%;width:100%;object-fit:contain;display:block}
+.nav-title{font-family:var(--font-display);font-weight:700;font-size:1.1rem;letter-spacing:-0.3px;line-height:1.2}
+.nav-links{display:flex;align-items:center;gap:8px}
+.nav-link{display:flex;align-items:center;gap:6px;padding:8px 16px;border-radius:50px;text-decoration:none;color:var(--text-secondary);font-size:0.85rem;font-weight:500;transition:all var(--transition);border:1px solid transparent;white-space:nowrap}
+.nav-link:hover,.nav-link.active{background:var(--primary-light);color:var(--primary);border-color:rgba(37,99,235,0.2)}
+.nav-icon{width:16px;height:16px}
+.theme-toggle{background:none;border:1px solid var(--border-color);border-radius:50%;width:38px;height:38px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all var(--transition);color:var(--text-secondary)}
+.theme-toggle:hover{background:var(--primary-light);color:var(--primary)}
+[data-theme="dark"] .icon-light{display:none}
+[data-theme="light"] .icon-dark{display:none}
+
+/* Hero */
+.hero-section{min-height:100vh;display:flex;align-items:center;justify-content:center;position:relative;z-index:1;padding:120px 20px 60px}
+.hero-glass{max-width:700px;width:100%;text-align:center;padding:60px 48px;border-radius:var(--radius-xl);animation:fadeInUp 0.8s ease-out}
+.hero-badge{display:inline-block;padding:8px 20px;border-radius:50px;font-size:0.8rem;font-weight:600;color:var(--primary);margin-bottom:24px;letter-spacing:0.3px}
+.hero-title{font-family:var(--font-display);font-size:3rem;font-weight:800;line-height:1.15;letter-spacing:-1px;margin-bottom:16px}
+.gradient-text{background:linear-gradient(135deg,var(--primary) 0%,var(--it2-color) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.hero-subtitle{font-size:1.1rem;color:var(--text-secondary);margin-bottom:32px;line-height:1.6}
+
+/* Buttons */
+.btn-primary{display:inline-flex;align-items:center;gap:8px;padding:14px 32px;background:linear-gradient(135deg,var(--primary) 0%,var(--primary-dark) 100%);color:#fff;border:none;border-radius:50px;font-size:0.95rem;font-weight:600;cursor:pointer;transition:all var(--transition);box-shadow:0 4px 15px rgba(37,99,235,0.3);position:relative;overflow:hidden;transform:translateZ(0);will-change:transform;-webkit-transform:translateZ(0)}
+.btn-primary:hover{transform:translateY(-2px) translateZ(0);box-shadow:0 8px 25px rgba(37,99,235,0.4)}
+.btn-primary:active{transform:translateY(0) translateZ(0)}
+.btn-full{width:100%;justify-content:center}
+.btn-secondary{display:inline-flex;align-items:center;gap:8px;padding:12px 24px;background:var(--bg-secondary);color:var(--text-primary);border:1px solid var(--border-color);border-radius:50px;font-size:0.85rem;font-weight:500;cursor:pointer;transition:all var(--transition)}
+.btn-secondary:hover{background:var(--primary-light);border-color:var(--primary)}
+.btn-icon{width:18px;height:18px}
+.btn-ripple{position:relative;overflow:hidden}
+.btn-ripple::after{content:'';position:absolute;top:50%;left:50%;width:0;height:0;border-radius:50%;background:rgba(255,255,255,0.3);transform:translate(-50%,-50%);transition:width 0.6s,height 0.6s}
+.btn-ripple:active::after{width:300px;height:300px}
+
+/* Sections */
+.section{max-width:1200px;margin:0 auto;padding:40px 20px 80px;position:relative;z-index:1}
+.section-header{margin-bottom:32px;text-align:center}
+.section-title{font-family:var(--font-display);font-size:1.8rem;font-weight:700;display:flex;align-items:center;justify-content:center;gap:10px;letter-spacing:-0.5px}
+.section-icon{width:28px;height:28px;color:var(--primary)}
+.section-subtitle{color:var(--text-secondary);margin-top:8px;font-size:0.95rem}
+
+/* Cards */
+.card{border-radius:var(--radius);margin-bottom:24px;overflow:hidden}
+.card.glass{background-image:radial-gradient(360px circle at var(--mouse-x,50%) var(--mouse-y,50%),rgba(37,99,235,0.10),transparent 70%)}
+.card-header{padding:20px 24px 0;display:flex;align-items:center;justify-content:space-between}
+.card-header h3{font-size:1rem;font-weight:700;display:flex;align-items:center;gap:8px}
+.card-icon{width:20px;height:20px;color:var(--primary)}
+.card-badge{font-size:0.75rem;font-weight:600;color:var(--text-tertiary);padding:4px 12px;border-radius:50px;background:var(--bg-primary)}
+.card-body{padding:24px}
+
+/* Sliders */
+.slider-row{display:flex;align-items:center;gap:16px;padding:16px 20px;margin-bottom:12px;background:var(--bg-primary);border-radius:var(--radius-sm);transition:all var(--transition)}
+.slider-row:hover{background:var(--primary-light)}
+.slider-row label{width:220px;font-weight:600;font-size:0.88rem;flex-shrink:0}
+.slider-row input[type="range"]{flex:1;-webkit-appearance:none;appearance:none;height:6px;background:linear-gradient(to right,#e2e8f0 0%,var(--primary) 100%);border-radius:3px;outline:none;cursor:pointer}
+.slider-row input[type="range"]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;height:22px;background:var(--primary);border-radius:50%;cursor:pointer;box-shadow:0 2px 8px rgba(37,99,235,0.3);transition:all var(--transition)}
+.slider-row input[type="range"]::-webkit-slider-thumb:hover{transform:scale(1.2);box-shadow:0 4px 16px rgba(37,99,235,0.4)}
+.slider-value{width:48px;height:32px;background:var(--primary-light);color:var(--primary-dark);border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.9rem;flex-shrink:0}
+
+/* Charts */
+.charts-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:24px}
+.charts-grid canvas{max-height:300px}
+
+/* Exports */
+.export-buttons{display:flex;gap:12px;flex-wrap:wrap;justify-content:center}
+
+/* Footer */
+.footer{text-align:center;padding:20px;font-size:0.8rem;color:var(--text-tertiary);border-top:1px solid var(--border-color);position:relative;z-index:1}
+
+/* Loading */
+.spinner{width:40px;height:40px;border:3px solid var(--border-color);border-top-color:var(--primary);border-radius:50%;animation:spin 0.7s linear infinite;margin:0 auto 16px}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ══════════════════════════════════════════════════════════
+   PRINT / PDF — triggered by the "Print / PDF" button on the
+   Reports tab (window.print() in index.html).
+   ══════════════════════════════════════════════════════════ */
+@media print {
+    /* Sections are shown/hidden on screen by JS toggling inline
+       `display` styles (initNavigation() in app.js) -- #reports starts
+       as display:none in the HTML itself and only becomes display:block
+       once its nav link is clicked. Without this block, window.print()
+       just inherits whatever that current state happens to be, which is
+       why a printed page could show the wrong section, or -- since
+       #export-actions-card's buttons are the only static content
+       #reports ever had -- no report data at all. An !important rule
+       here still wins over a plain (non-!important) inline style, so
+       this makes print show #reports and nothing else, regardless of
+       whichever tab is actually active on screen. */
+    #bg-canvas, .navbar, .theme-toggle, .hero-section,
+    #dashboard, #xai, #export-actions-card { display: none !important; }
+    #reports { display: block !important; }
+
+    /* Always print on a plain light background regardless of the
+       on-screen theme -- dark mode's light-on-dark palette would
+       otherwise print as near-invisible light text on white paper. */
+    :root, [data-theme="dark"] {
+        --bg-primary: #ffffff;
+        --bg-secondary: #ffffff;
+        --bg-glass: #ffffff;
+        --bg-glass-strong: #ffffff;
+        --text-primary: #0f172a;
+        --text-secondary: #334155;
+        --text-tertiary: #64748b;
+        --border-color: #d8dee8;
+        --border-glass: #d8dee8;
+    }
+    /* Most browsers skip background colors/gradients when printing
+       unless told otherwise -- without this, the label pills and
+       confidence badges in the report tables would print as plain
+       text with no fill color. */
+    html { -webkit-print-color-adjust: exact; color-adjust: exact; print-color-adjust: exact; }
+
+    body { background: #fff !important; }
+    .glass { background-image: none !important; backdrop-filter: none !important; -webkit-backdrop-filter: none !important; box-shadow: none !important; }
+    .card { box-shadow: none !important; break-inside: avoid; page-break-inside: avoid; }
+    .section { max-width: 100%; margin: 0; padding: 0; }
+    /* Report rule/reasoning cards reuse .results-grid's 2-column layout
+       from app.js's result-styles. Forced to 1 column here only -- the
+       monospace Explanation text wraps its own "====" divider lines
+       badly at a print page's narrower half-width. */
+    .results-grid { grid-template-columns: 1fr !important; }
+    .explanation-pre { font-size: 0.7rem; }
+}

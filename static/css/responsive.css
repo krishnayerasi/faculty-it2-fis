@@ -1,0 +1,35 @@
+/* ══════════════════════════════════════════════════════════
+   RESPONSIVE.CSS — Tablet & Mobile breakpoints
+   ══════════════════════════════════════════════════════════ */
+
+@media (max-width: 1024px) {
+    .hero-title   { font-size: 2.2rem; }
+    .charts-grid  { grid-template-columns: 1fr 1fr; }
+    .nav-links .nav-link span { display: none; }
+    .nav-link     { padding: 8px 12px; }
+    .hero-glass   { padding: 40px 28px; }
+}
+
+@media (max-width: 768px) {
+    .hero-title   { font-size: 1.7rem; }
+    .hero-subtitle{ font-size: 0.95rem; }
+    .hero-glass   { padding: 32px 20px; }
+    .charts-grid  { grid-template-columns: 1fr; }
+    .nav-links    { gap: 4px; }
+    .nav-brand .nav-title { font-size: 0.9rem; }
+    .nav-logo-badge { width: 34px; height: 34px; border-radius: 10px; }
+    .section      { padding: 20px 12px 60px; }
+    .section-title{ font-size: 1.3rem; }
+    .slider-row   { flex-wrap: wrap; }
+    .slider-row label { width: 100%; }
+    .navbar       { top: 8px; width: calc(100% - 16px); }
+}
+
+@media (max-width: 480px) {
+    .hero-title   { font-size: 1.4rem; }
+    .btn-primary  { padding: 12px 24px; font-size: 0.85rem; }
+    .card-body    { padding: 16px; }
+    .slider-row   { padding: 12px 14px; }
+    .export-buttons { flex-direction: column; }
+    .export-buttons .btn-secondary { width: 100%; justify-content: center; }
+}

@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Faculty Performance Evaluation | MIT Manipal</title>
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='images/mit-logo.png') }}?v={{ asset_version('images/mit-logo.png') }}">
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+    <!-- GSAP -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+
+    <!-- Three.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v={{ asset_version('css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/animations.css') }}?v={{ asset_version('css/animations.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/responsive.css') }}?v={{ asset_version('css/responsive.css') }}">
+</head>
+<body>
+
+    <!-- ═══════════════ THREE.JS BACKGROUND ═══════════════ -->
+    <canvas id="bg-canvas"></canvas>
+
+    <!-- ═══════════════ NAVIGATION ═══════════════ -->
+    <nav class="navbar glass">
+        <div class="nav-container">
+            <div class="nav-brand">
+                <span class="nav-logo-badge">
+                    <img src="{{ url_for('static', filename='images/mit-logo.png') }}" alt="MIT Manipal" class="nav-logo" onerror="this.parentElement.style.display='none'">
+                </span>
+                <span class="nav-title">AI Faculty Evaluation</span>
+            </div>
+            <div class="nav-links">
+                <a href="#dashboard" class="nav-link active" data-section="dashboard">
+                    <i data-lucide="layout-dashboard" class="nav-icon"></i>
+                    <span>Dashboard</span>
+                </a>
+                <a href="#xai" class="nav-link" data-section="xai">
+                    <i data-lucide="brain-circuit" class="nav-icon"></i>
+                    <span>XAI</span>
+                </a>
+                <a href="#reports" class="nav-link" data-section="reports">
+                    <i data-lucide="file-text" class="nav-icon"></i>
+                    <span>Reports</span>
+                </a>
+                <button id="theme-toggle" class="theme-toggle" aria-label="Toggle dark mode">
+                    <i data-lucide="sun" class="icon-light"></i>
+                    <i data-lucide="moon" class="icon-dark"></i>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- ═══════════════ MAIN CONTENT ═══════════════ -->
+    <main class="main-content">
+
+        <!-- ═══════════ HERO SECTION ═══════════ -->
+        <section id="hero" class="hero-section">
+            <div class="hero-glass glass glass-strong">
+                <div class="hero-badge glass">🧠 Explainable AI • Type‑2 Fuzzy Logic</div>
+                <h1 class="hero-title">
+                    AI Faculty Performance
+                    <span class="gradient-text">Evaluation Platform</span>
+                </h1>
+                <p class="hero-subtitle">
+                    Explainable Hierarchical Type‑1 & Interval Type‑2 Fuzzy Inference System
+                </p>
+                <button class="btn-primary btn-ripple" onclick="scrollToDashboard()">
+                    <i data-lucide="rocket" class="btn-icon"></i>
+                    Launch Evaluation
+                </button>
+            </div>
+            <div class="hero-particles" id="hero-particles"></div>
+        </section>
+
+        <!-- ═══════════ DASHBOARD SECTION ═══════════ -->
+        <section id="dashboard" class="section">
+            <div class="section-header">
+                <h2 class="section-title">
+                    <i data-lucide="sliders-horizontal" class="section-icon"></i>
+                    Faculty Evaluation Dashboard
+                </h2>
+                <p class="section-subtitle">Enter faculty scores to evaluate performance using IT1 & IT2 fuzzy systems</p>
+            </div>
+
+            <!-- Input Card -->
+            <div class="card glass" id="input-card">
+                <div class="card-header">
+                    <h3><i data-lucide="edit-3" class="card-icon"></i> Faculty Profile Input</h3>
+                    <span class="card-badge">5 KPIs • 0‑100 Scale</span>
+                </div>
+                <div class="card-body">
+                    <div id="sliders-container"></div>
+                    <button class="btn-primary btn-ripple btn-full" onclick="runEvaluation()" id="eval-btn">
+                        <i data-lucide="sparkles" class="btn-icon"></i>
+                        Evaluate Faculty
+                    </button>
+                </div>
+            </div>
+
+            <!-- Results Container -->
+            <div id="results-container"></div>
+
+            <!-- Charts Row -->
+            <div id="charts-container" style="display:none;">
+                <div class="charts-grid">
+                    <div class="card glass">
+                        <div class="card-header"><h3><i data-lucide="radar" class="card-icon"></i> KPI Radar</h3></div>
+                        <div class="card-body"><canvas id="radarChart"></canvas></div>
+                    </div>
+                    <div class="card glass">
+                        <div class="card-header"><h3><i data-lucide="activity" class="card-icon"></i> Score Gauge</h3></div>
+                        <div class="card-body"><canvas id="gaugeChart"></canvas></div>
+                    </div>
+                    <div class="card glass">
+                        <div class="card-header"><h3><i data-lucide="bar-chart-3" class="card-icon"></i> IT1 vs IT2</h3></div>
+                        <div class="card-body"><canvas id="comparisonChart"></canvas></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ═══════════ XAI SECTION ═══════════ -->
+        <section id="xai" class="section" style="display:none;">
+            <div class="section-header">
+                <h2 class="section-title"><i data-lucide="brain-circuit" class="section-icon"></i> Explainable AI</h2>
+            </div>
+            <div id="xai-container"></div>
+        </section>
+
+        <!-- ═══════════ REPORTS SECTION ═══════════ -->
+        <section id="reports" class="section" style="display:none;">
+            <div class="section-header">
+                <h2 class="section-title"><i data-lucide="file-text" class="section-icon"></i> Reports</h2>
+            </div>
+            <div class="card glass" id="export-actions-card">
+                <div class="card-body">
+                    <div class="export-buttons">
+                        <button class="btn-secondary" onclick="window.print()"><i data-lucide="printer"></i> Print / PDF</button>
+                        <button class="btn-secondary" onclick="exportCSV()"><i data-lucide="table"></i> Export CSV</button>
+                        <button class="btn-secondary" onclick="exportJSON()"><i data-lucide="code"></i> Export JSON</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Populated by renderReportSection() in app.js, either with
+                 the last evaluation's data or an empty-state message. This
+                 was previously missing entirely -- the Reports tab had
+                 nothing but the buttons above, so Print/PDF and both
+                 exports had no data to act on. -->
+            <div id="report-content"></div>
+        </section>
+    </main>
+
+    <!-- ═══════════════ FOOTER ═══════════════ -->
+    <footer class="footer glass">
+        <p>© 2026 Manipal Institute of Technology. All rights reserved.</p>
+        <p style="opacity:0.5;font-size:0.75rem;margin-top:4px;">Build: {{ build_version }}</p>
+    </footer>
+
+    <!-- Custom JavaScript -->
+    <script src="{{ url_for('static', filename='js/three-background.js') }}?v={{ asset_version('js/three-background.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/app.js') }}?v={{ asset_version('js/app.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/charts.js') }}?v={{ asset_version('js/charts.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/ui.js') }}?v={{ asset_version('js/ui.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/xai.js') }}?v={{ asset_version('js/xai.js') }}"></script>
+
+    <script>
+        // Initialize icons and core modules
+        if (typeof lucide !== 'undefined') lucide.createIcons();
+        initNavigation();
+        buildSliders();
+        if (typeof renderReportSection === 'function') renderReportSection();
+        if (typeof initThreeBackground === 'function') initThreeBackground();
+    </script>
+</body>
+</html>
