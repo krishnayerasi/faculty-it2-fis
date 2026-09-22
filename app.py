@@ -23,7 +23,7 @@ it2 = IT2FacultyEvaluator(delta=6)
 # Bumped by hand on each handoff so it's unambiguous, at a glance, whether
 # a running instance is actually the latest code -- shown in the page
 # footer and at /api/health.
-BUILD_VERSION = "2026-08-09.1-reports-print-export-fix"
+BUILD_VERSION = "2026-09-22.1-navbar-glass-paint-fix"
 
 KPI_NAMES = ('AM', 'SEP', 'CL', 'AC', 'RC')
 
