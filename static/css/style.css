@@ -65,7 +65,19 @@ body{font-family:var(--font-sans);background:var(--bg-primary);color:var(--text-
 .glass-strong{background:var(--bg-glass-strong);backdrop-filter:blur(30px);-webkit-backdrop-filter:blur(30px)}
 
 /* Navigation */
-.navbar{position:fixed;top:16px;left:50%;transform:translateX(-50%);width:calc(100% - 40px);max-width:1200px;z-index:1000;border-radius:var(--radius-lg);padding:14px 24px}
+/* transform includes translateZ(0) alongside the translateX(-50%) centering
+   -- .glass (below) sets its own transform:translateZ(0) to force this panel
+   onto its own GPU layer, but a single element only ever applies ONE
+   `transform` declaration, so .navbar's own rule here was silently replacing
+   that hint rather than combining with it. Left that way, this is the one
+   .glass panel that is both position:fixed AND stacked (z-index:1000) above
+   the constantly-repainting #bg-canvas WebGL layer with no compositing layer
+   of its own -- the same "glass panel content fails to paint" failure mode
+   ui.js already documents around .btn-primary, just reached via plain CSS
+   cascade here instead of a GSAP-written inline style. will-change:transform
+   reinforces the same fix, matching .btn-primary's own translateZ(0) +
+   will-change pairing below. */
+.navbar{position:fixed;top:16px;left:50%;transform:translateX(-50%) translateZ(0);width:calc(100% - 40px);max-width:1200px;z-index:1000;border-radius:var(--radius-lg);padding:14px 24px;will-change:transform}
 .nav-container{display:flex;align-items:center;justify-content:space-between;gap:24px}
 .nav-brand{display:flex;align-items:center;gap:12px}
 .nav-logo-badge{display:flex;align-items:center;justify-content:center;flex-shrink:0;width:42px;height:42px;border-radius:12px;background:#ffffff;border:1px solid var(--border-glass);box-shadow:0 2px 8px rgba(0,0,0,0.12);padding:4px;overflow:hidden}
