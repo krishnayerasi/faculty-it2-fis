@@ -13,7 +13,7 @@ from flask import Flask, render_template, request, jsonify
 mimetypes.add_type('application/javascript', '.js')
 mimetypes.add_type('text/css', '.css')
 
-from T1_engine import T1FacultyEvaluator
+from t1_engine import T1FacultyEvaluator
 from it2_engine import IT2FacultyEvaluator
 
 app = Flask(__name__)
