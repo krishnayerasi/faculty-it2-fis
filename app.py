@@ -1,5 +1,5 @@
 """
-app.py — Flask web application for IT1 vs IT2 comparison.
+app.py — Flask web application for T1 vs IT2 comparison.
 """
 
 import os
@@ -13,11 +13,11 @@ from flask import Flask, render_template, request, jsonify
 mimetypes.add_type('application/javascript', '.js')
 mimetypes.add_type('text/css', '.css')
 
-from it1_engine import IT1FacultyEvaluator
+from T1_engine import T1FacultyEvaluator
 from it2_engine import IT2FacultyEvaluator
 
 app = Flask(__name__)
-it1 = IT1FacultyEvaluator()
+T1 = T1FacultyEvaluator()
 it2 = IT2FacultyEvaluator(delta=6)
 
 # Bumped by hand on each handoff so it's unambiguous, at a glance, whether
@@ -62,8 +62,8 @@ def compute_sensitivity(evaluator, AM, SEP, CL, AC, RC, step=10.0):
     final PerformanceGrade moves between those two evaluations.
 
     This only calls `evaluator.evaluate(...)` -- the same public method
-    the API already uses -- so it works for either the IT1 or IT2
-    engine as-is, with no changes to it1_engine.py / it2_engine.py.
+    the API already uses -- so it works for either the T1 or IT2
+    engine as-is, with no changes to T1_engine.py / it2_engine.py.
     Near a domain edge (KPI within `step` of 0 or 100) one side of the
     perturbation clips, which naturally degrades this to a one-sided
     (forward/backward) difference right at the boundary -- that's
@@ -102,14 +102,14 @@ def evaluate():
         AC = max(0, min(100, float(d.get('AC', 0))))
         RC = max(0, min(100, float(d.get('RC', 0))))
 
-        it1_result = it1.evaluate(AM, SEP, CL, AC, RC)
+        T1_result = T1.evaluate(AM, SEP, CL, AC, RC)
         it2_result = it2.evaluate(AM, SEP, CL, AC, RC)
-        it1_result['Sensitivity'] = compute_sensitivity(it1, AM, SEP, CL, AC, RC)
+        T1_result['Sensitivity'] = compute_sensitivity(T1, AM, SEP, CL, AC, RC)
         it2_result['Sensitivity'] = compute_sensitivity(it2, AM, SEP, CL, AC, RC)
 
         return jsonify({'success': True,
                         'inputs': {'AM':AM,'SEP':SEP,'CL':CL,'AC':AC,'RC':RC},
-                        'it1': it1_result,
+                        'T1': T1_result,
                         'it2': it2_result})
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 400
