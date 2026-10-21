@@ -73,13 +73,13 @@ function confidenceBadge(width) {
     return '<span class="conf-badge conf-low">🔴 Low Confidence</span>';
 }
 
-/* IT1 has no uncertainty interval, so its confidence is read off the
-   strongest fired Stage-2 rule instead -- same thresholds it1_engine.py
+/* T1 has no uncertainty interval, so its confidence is read off the
+   strongest fired Stage-2 rule instead -- same thresholds T1_engine.py
    itself uses (>0.7 High, >0.4 Moderate, else Low). Computed directly
    from Stage2_Rules rather than searching the Explanation text: that
    text also contains term names like "AC=High", so a plain
    .includes('High') can match the wrong word and show the wrong badge. */
-function it1ConfidenceBadge(stage2Rules) {
+function T1ConfidenceBadge(stage2Rules) {
     const maxMu = (stage2Rules && stage2Rules.length)
         ? Math.max(...stage2Rules.map(r => r.firing_strength))
         : 0;
@@ -118,7 +118,7 @@ async function runEvaluation() {
             // Keep the Reports tab in sync with whatever was just evaluated,
             // so it's already populated by the time the user clicks over to
             // it -- see the comment on `lastEvaluation` above.
-            lastEvaluation = { inputs: data, it1: result.it1, it2: result.it2, timestamp: new Date() };
+            lastEvaluation = { inputs: data, T1: result.T1, it2: result.it2, timestamp: new Date() };
             try {
                 renderReportSection();
             } catch (reportErr) {
@@ -159,7 +159,7 @@ async function runEvaluation() {
 
 /* ── Render Results ─────────────────────── */
 function renderResults(result) {
-    const it1 = result.it1;
+    const T1 = result.T1;
     const it2 = result.it2;
     const it2Width = it2.Interval ? it2.Interval[1] - it2.Interval[0] : 0;
     const it2Left  = it2.Interval ? (it2.Interval[0] / 100) * 100 : 0;
@@ -168,19 +168,19 @@ function renderResults(result) {
 
     document.getElementById('results-container').innerHTML = `
     <div class="results-grid">
-        <!-- IT1 Card -->
+        <!-- T1 Card -->
         <div class="card glass result-card">
-            <div class="card-header"><h3>📊 IT1 Type‑1 Baseline</h3><span class="card-badge">Standard Sugeno</span></div>
+            <div class="card-header"><h3>📊 T1 Type‑1 Baseline</h3><span class="card-badge">Standard Sugeno</span></div>
             <div class="card-body">
-                ${createScoreRing(it1.PerformanceGrade, 'var(--it1-color)', 'Performance Grade')}
-                <div style="text-align:center;margin:8px 0;"><span class="label-pill ${pillClass(it1.PerformanceLabel)}">${it1.PerformanceLabel}</span></div>
+                ${createScoreRing(T1.PerformanceGrade, 'var(--T1-color)', 'Performance Grade')}
+                <div style="text-align:center;margin:8px 0;"><span class="label-pill ${pillClass(T1.PerformanceLabel)}">${T1.PerformanceLabel}</span></div>
                 <div class="metric-list">
-                    <div class="metric-item"><span>Teaching Score</span><strong>${it1.TeachingScore} <small>${it1.TeachingLabel}</small></strong></div>
+                    <div class="metric-item"><span>Teaching Score</span><strong>${T1.TeachingScore} <small>${T1.TeachingLabel}</small></strong></div>
                     <div class="metric-item"><span>Uncertainty Interval</span><strong style="color:#dc2626;">⚠ Not available</strong></div>
-                    <div class="metric-item"><span>Confidence</span>${it1ConfidenceBadge(it1.Stage2_Rules)}</div>
+                    <div class="metric-item"><span>Confidence</span>${T1ConfidenceBadge(T1.Stage2_Rules)}</div>
                 </div>
                 <div class="rule-section"><h4>🔍 Top Fired Rules</h4>
-                    ${it1.Stage2_Rules.slice(0,2).map(r => `
+                    ${T1.Stage2_Rules.slice(0,2).map(r => `
                         <div class="rule-chip"><span class="hl">Rule #${r.rule_index}</span>: IF Teach=<span class="hl">${r.antecedents[0]}</span>, AC=<span class="hl">${r.antecedents[1]}</span>, RC=<span class="hl">${r.antecedents[2]}</span> → <span class="hl">${r.consequent}</span> (μ=${r.firing_strength.toFixed(3)})</div>
                     `).join('')}
                 </div>
@@ -210,7 +210,7 @@ function renderResults(result) {
         </div>
     </div>
     <div class="results-grid" style="margin-top:24px;">
-        <div class="card glass"><div class="card-header"><h4>🧠 IT1 Reasoning</h4></div><div class="card-body"><pre class="explanation-pre">${it1.Explanation}</pre></div></div>
+        <div class="card glass"><div class="card-header"><h4>🧠 T1 Reasoning</h4></div><div class="card-body"><pre class="explanation-pre">${T1.Explanation}</pre></div></div>
         <div class="card glass it2-card"><div class="card-header"><h4>🧠 IT2 Reasoning</h4></div><div class="card-body"><pre class="explanation-pre">${it2.Explanation}</pre></div></div>
     </div>`;
 
@@ -270,7 +270,7 @@ function renderReportSection() {
         return;
     }
 
-    const { inputs, it1, it2, timestamp } = lastEvaluation;
+    const { inputs, T1, it2, timestamp } = lastEvaluation;
     const it2Width = it2.Interval ? it2.Interval[1] - it2.Interval[0] : 0;
 
     // Separate sibling cards (not one big wrapper) so each one can carry
@@ -286,22 +286,22 @@ function renderReportSection() {
                 <tbody><tr>${KPIS.map(k => `<td>${inputs[k.id]}</td>`).join('')}</tr></tbody>
             </table>
 
-            <h4 class="report-subhead">IT1 vs IT2 Results</h4>
+            <h4 class="report-subhead">T1 vs IT2 Results</h4>
             <table class="report-table">
-                <thead><tr><th>Metric</th><th>IT1 · Type‑1</th><th>IT2 · Interval Type‑2</th></tr></thead>
+                <thead><tr><th>Metric</th><th>T1 · Type‑1</th><th>IT2 · Interval Type‑2</th></tr></thead>
                 <tbody>
-                    <tr><td>Teaching Score</td><td>${it1.TeachingScore} <small>(${it1.TeachingLabel})</small></td><td>${it2.TeachingScore} <small>(${it2.TeachingLabel})</small></td></tr>
-                    <tr><td>Performance Grade</td><td>${it1.PerformanceGrade} <span class="label-pill ${pillClass(it1.PerformanceLabel)}">${it1.PerformanceLabel}</span></td><td>${it2.PerformanceGrade} <span class="label-pill ${pillClass(it2.PerformanceLabel)}">${it2.PerformanceLabel}</span></td></tr>
+                    <tr><td>Teaching Score</td><td>${T1.TeachingScore} <small>(${T1.TeachingLabel})</small></td><td>${it2.TeachingScore} <small>(${it2.TeachingLabel})</small></td></tr>
+                    <tr><td>Performance Grade</td><td>${T1.PerformanceGrade} <span class="label-pill ${pillClass(T1.PerformanceLabel)}">${T1.PerformanceLabel}</span></td><td>${it2.PerformanceGrade} <span class="label-pill ${pillClass(it2.PerformanceLabel)}">${it2.PerformanceLabel}</span></td></tr>
                     <tr><td>Uncertainty Interval</td><td><strong style="color:var(--danger);">⚠ Not available</strong></td><td>[${it2.Interval[0]}, ${it2.Interval[1]}]</td></tr>
-                    <tr><td>Confidence</td><td>${it1ConfidenceBadge(it1.Stage2_Rules)}</td><td>${confidenceBadge(it2Width)}</td></tr>
+                    <tr><td>Confidence</td><td>${T1ConfidenceBadge(T1.Stage2_Rules)}</td><td>${confidenceBadge(it2Width)}</td></tr>
                 </tbody>
             </table>
         </div>
     </div>
 
     <div class="results-grid" style="margin-top:24px;">
-        <div class="card glass"><div class="card-header"><h4>🔍 IT1 Top Fired Rules</h4></div><div class="card-body">
-            ${it1.Stage2_Rules.slice(0,2).map(r => `
+        <div class="card glass"><div class="card-header"><h4>🔍 T1 Top Fired Rules</h4></div><div class="card-body">
+            ${T1.Stage2_Rules.slice(0,2).map(r => `
                 <div class="rule-chip"><span class="hl">Rule #${r.rule_index}</span>: IF Teach=<span class="hl">${r.antecedents[0]}</span>, AC=<span class="hl">${r.antecedents[1]}</span>, RC=<span class="hl">${r.antecedents[2]}</span> → <span class="hl">${r.consequent}</span> (μ=${r.firing_strength.toFixed(3)})</div>
             `).join('')}
         </div></div>
@@ -313,7 +313,7 @@ function renderReportSection() {
     </div>
 
     <div class="results-grid" style="margin-top:24px;">
-        <div class="card glass"><div class="card-header"><h4>🧠 IT1 Reasoning</h4></div><div class="card-body"><pre class="explanation-pre">${it1.Explanation}</pre></div></div>
+        <div class="card glass"><div class="card-header"><h4>🧠 T1 Reasoning</h4></div><div class="card-body"><pre class="explanation-pre">${T1.Explanation}</pre></div></div>
         <div class="card glass it2-card"><div class="card-header"><h4>🧠 IT2 Reasoning</h4></div><div class="card-body"><pre class="explanation-pre">${it2.Explanation}</pre></div></div>
     </div>`;
 
@@ -392,17 +392,17 @@ function scrollToDashboard() {
 /* ── Export Helpers ─────────────────────── */
 // Both previously read the 5 slider values directly off the DOM, so they
 // "worked" from any tab but only ever exported the raw inputs -- never the
-// computed IT1/IT2 results, which is the part evaluation actually produces.
+// computed T1/IT2 results, which is the part evaluation actually produces.
 // They now export lastEvaluation instead, same as the report/print output.
 function exportCSV() {
     if (!lastEvaluation) { alert('No evaluation yet — run one from the Dashboard first, then come back to Reports.'); return; }
-    const { inputs, it1, it2 } = lastEvaluation;
-    const rows = [['Metric', 'IT1 (Type-1)', 'IT2 (Interval Type-2)']];
+    const { inputs, T1, it2 } = lastEvaluation;
+    const rows = [['Metric', 'T1 (Type-1)', 'IT2 (Interval Type-2)']];
     KPIS.forEach(k => rows.push([`Input: ${k.name}`, inputs[k.id], inputs[k.id]]));
-    rows.push(['Teaching Score', it1.TeachingScore, it2.TeachingScore]);
-    rows.push(['Teaching Label', it1.TeachingLabel, it2.TeachingLabel]);
-    rows.push(['Performance Grade', it1.PerformanceGrade, it2.PerformanceGrade]);
-    rows.push(['Performance Label', it1.PerformanceLabel, it2.PerformanceLabel]);
+    rows.push(['Teaching Score', T1.TeachingScore, it2.TeachingScore]);
+    rows.push(['Teaching Label', T1.TeachingLabel, it2.TeachingLabel]);
+    rows.push(['Performance Grade', T1.PerformanceGrade, it2.PerformanceGrade]);
+    rows.push(['Performance Label', T1.PerformanceLabel, it2.PerformanceLabel]);
     rows.push(['Uncertainty Interval', 'N/A', it2.Interval ? `[${it2.Interval[0]}, ${it2.Interval[1]}]` : 'N/A']);
     const csv = rows.map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\n');
     downloadFile('faculty-evaluation-report.csv', 'text/csv', csv);
