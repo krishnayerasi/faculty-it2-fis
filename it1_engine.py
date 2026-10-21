@@ -1,8 +1,8 @@
 """
-it1_engine.py
+T1_engine.py
 Type-1 Sugeno Fuzzy Inference Engine for Faculty Performance Evaluation.
 
-Hierarchical two-stage FIS -- the Type-1 baseline in the IT1-vs-IT2
+Hierarchical two-stage FIS -- the Type-1 baseline in the T1-vs-IT2
 comparison:
     Stage 1: AM, SEP, CL             -> Teaching Score
     Stage 2: Teaching Score, AC, RC  -> Performance Grade
@@ -23,7 +23,7 @@ from typing import Dict, List, Tuple
 import numpy as np
 
 
-class IT1FacultyEvaluator:
+class T1FacultyEvaluator:
     """Hierarchical Type‑1 Sugeno Fuzzy System for Faculty Evaluation."""
 
     KPI_NAMES: Tuple[str, ...] = ('AM', 'SEP', 'CL', 'AC', 'RC')
@@ -200,14 +200,14 @@ class IT1FacultyEvaluator:
 
     def _build_explanation(self, ts: float, tl: str, pg: float, pl: str,
                             s1r: List[Dict], s2r: List[Dict]) -> str:
-        lines = ["=" * 60, "FACULTY EVALUATION — IT1 (TYPE‑1)", "=" * 60, "",
+        lines = ["=" * 60, "FACULTY EVALUATION — T1 (TYPE‑1)", "=" * 60, "",
                  f"📚 STAGE 1: Teaching Score = {ts:.1f} ({tl})"]
         if s1r:
             top = s1r[0]
             lines.append(f"   Top rule: IF AM={top['antecedents'][0]}, SEP={top['antecedents'][1]}, CL={top['antecedents'][2]}")
             lines.append(f"            → {top['consequent']:.0f} (μ={top['firing_strength']:.3f})")
         lines.extend(["", f"🎓 STAGE 2: Performance Grade = {pg:.1f} ({pl})",
-                      "   Note: IT1 provides no uncertainty interval."])
+                      "   Note: T1 provides no uncertainty interval."])
         if s2r:
             top = s2r[0]
             lines.append(f"   Top rule: IF Teach={top['antecedents'][0]}, AC={top['antecedents'][1]}, RC={top['antecedents'][2]}")
@@ -254,12 +254,12 @@ class IT1FacultyEvaluator:
         }
 
     def __repr__(self) -> str:
-        return (f"IT1FacultyEvaluator(domain={self.domain}, "
+        return (f"T1FacultyEvaluator(domain={self.domain}, "
                 f"rules={len(self.rule_teach)}+{len(self.rule_master)}, "
                 f"warn_on_clip={self.warn_on_clip})")
 
 
 if __name__ == "__main__":
-    evaluator = IT1FacultyEvaluator()
+    evaluator = T1FacultyEvaluator()
     result = evaluator.evaluate(AM=80, SEP=70, CL=90, AC=60, RC=75)
     print(result['Explanation'])
