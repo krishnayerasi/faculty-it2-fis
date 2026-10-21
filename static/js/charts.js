@@ -88,7 +88,7 @@ function renderComparison(result) {
         data: {
             labels: ['Teaching Score', 'Performance Grade'],
             datasets: [
-                { label: 'IT1', data: [result.it1.TeachingScore, result.it1.PerformanceGrade], backgroundColor: 'rgba(234,88,12,0.7)', borderRadius: 8 },
+                { label: 'T1', data: [result.T1.TeachingScore, result.T1.PerformanceGrade], backgroundColor: 'rgba(234,88,12,0.7)', borderRadius: 8 },
                 { label: 'IT2', data: [result.it2.TeachingScore, result.it2.PerformanceGrade], backgroundColor: 'rgba(5,150,105,0.7)', borderRadius: 8 }
             ]
         },
