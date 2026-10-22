@@ -1,6 +1,6 @@
   % =========================================================================
 % NOISE_ROBUSTNESS.m (UPGRADED – COMPLETE OUTPUTS)
-% Monte Carlo experiment: IT1 vs IT2 under Gaussian input noise
+% Monte Carlo experiment: T1 vs IT2 under Gaussian input noise
 % 1000 profiles × 50 repetitions × 4 SNR levels
 % Saves all figures (300 DPI), results, and summary into Noise_Robustness_Outputs/
 % =========================================================================
@@ -55,8 +55,8 @@ clean_std = std(X_clean, 0, 1);
 
 fprintf('Clean dataset generated: %d profiles × 5 inputs\n', N);
 
-%% BUILD IT1 FIS
-fprintf('Building IT1 FIS...\n');
+%% BUILD T1 FIS
+fprintf('Building T1 FIS...\n');
 
 mfLow = [0, 0, 25, 45];
 mfMod = [25, 45, 65];
@@ -123,7 +123,7 @@ for t = 1:4
 end
 fis_Master = addRule(fis_Master, ruleList_Master);
 
-fprintf('IT1 FIS built successfully.\n');
+fprintf('T1 FIS built successfully.\n');
 
 %% BUILD IT2 STRUCTURES
 fprintf('Building IT2 structures...\n');
@@ -161,8 +161,8 @@ fprintf('IT2 structures built successfully.\n');
 %% COMPUTE CLEAN BASELINE OUTPUTS
 fprintf('Computing noise-free baseline outputs...\n');
 
-Teach_clean_IT1 = evalfis(fis_Teach, X_clean(:, [1, 3, 5]));
-Grade_clean_IT1 = evalfis(fis_Master, [Teach_clean_IT1, X_clean(:, 2), X_clean(:, 4)]);
+Teach_clean_T1 = evalfis(fis_Teach, X_clean(:, [1, 3, 5]));
+Grade_clean_T1 = evalfis(fis_Master, [Teach_clean_T1, X_clean(:, 2), X_clean(:, 4)]);
 
 Teach_clean_IT2 = zeros(N, 1);
 Grade_clean_IT2 = zeros(N, 1);
@@ -173,19 +173,19 @@ for n = 1:N
 end
 
 fprintf('Clean baselines computed.\n');
-fprintf('IT1 mean grade: %.2f | IT2 mean grade: %.2f\n', mean(Grade_clean_IT1), mean(Grade_clean_IT2));
+fprintf('T1 mean grade: %.2f | IT2 mean grade: %.2f\n', mean(Grade_clean_T1), mean(Grade_clean_IT2));
 
 %% NOISE INJECTION EXPERIMENT
 fprintf('\n========== NOISE ROBUSTNESS EXPERIMENT ==========\n');
 
 % Preallocate result arrays
-RMSE_runs_IT1 = zeros(M, length(SNR_levels));
+RMSE_runs_T1 = zeros(M, length(SNR_levels));
 RMSE_runs_IT2 = zeros(M, length(SNR_levels));
-MAE_IT1 = zeros(N, length(SNR_levels));
+MAE_T1 = zeros(N, length(SNR_levels));
 MAE_IT2 = zeros(N, length(SNR_levels));
-RMSE_IT1 = zeros(N, length(SNR_levels));
+RMSE_T1 = zeros(N, length(SNR_levels));
 RMSE_IT2 = zeros(N, length(SNR_levels));
-Std_IT1 = zeros(N, length(SNR_levels));
+Std_T1 = zeros(N, length(SNR_levels));
 Std_IT2 = zeros(N, length(SNR_levels));
 
 for s_idx = 1:length(SNR_levels)
@@ -198,7 +198,7 @@ for s_idx = 1:length(SNR_levels)
         noise = randn(N, 5) .* sigma;
         X_noisy = max(0, min(100, X_clean + noise));
         
-        % --- IT1 Evaluation ---
+        % --- T1 Evaluation ---
         T1 = evalfis(fis_Teach, X_noisy(:, [1, 3, 5]));
         G1 = evalfis(fis_Master, [T1, X_noisy(:, 2), X_noisy(:, 4)]);
         
@@ -212,15 +212,15 @@ for s_idx = 1:length(SNR_levels)
         
         % Accumulate per-profile errors
         if run == 1
-            SE1 = (G1 - Grade_clean_IT1).^2;
-            AE1 = abs(G1 - Grade_clean_IT1);
+            SE1 = (G1 - Grade_clean_T1).^2;
+            AE1 = abs(G1 - Grade_clean_T1);
             SE2 = (G2 - Grade_clean_IT2).^2;
             AE2 = abs(G2 - Grade_clean_IT2);
             allG1 = G1;
             allG2 = G2;
         else
-            SE1 = SE1 + (G1 - Grade_clean_IT1).^2;
-            AE1 = AE1 + abs(G1 - Grade_clean_IT1);
+            SE1 = SE1 + (G1 - Grade_clean_T1).^2;
+            AE1 = AE1 + abs(G1 - Grade_clean_T1);
             SE2 = SE2 + (G2 - Grade_clean_IT2).^2;
             AE2 = AE2 + abs(G2 - Grade_clean_IT2);
             allG1 = [allG1, G1];
@@ -228,7 +228,7 @@ for s_idx = 1:length(SNR_levels)
         end
         
         % Per-run overall RMSE
-        RMSE_runs_IT1(run, s_idx) = sqrt(mean((G1 - Grade_clean_IT1).^2));
+        RMSE_runs_T1(run, s_idx) = sqrt(mean((G1 - Grade_clean_T1).^2));
         RMSE_runs_IT2(run, s_idx) = sqrt(mean((G2 - Grade_clean_IT2).^2));
         
         % Progress indicator
@@ -238,18 +238,18 @@ for s_idx = 1:length(SNR_levels)
     end
     
     % Average over M runs per profile
-    MAE_IT1(:, s_idx) = AE1 / M;
+    MAE_T1(:, s_idx) = AE1 / M;
     MAE_IT2(:, s_idx) = AE2 / M;
-    RMSE_IT1(:, s_idx) = sqrt(SE1 / M);
+    RMSE_T1(:, s_idx) = sqrt(SE1 / M);
     RMSE_IT2(:, s_idx) = sqrt(SE2 / M);
-    Std_IT1(:, s_idx) = std(allG1, 0, 2);
+    Std_T1(:, s_idx) = std(allG1, 0, 2);
     Std_IT2(:, s_idx) = std(allG2, 0, 2);
 end
 
 fprintf('Noise experiment complete.\n');
 
 %% RESULTS AND STATISTICAL TESTS
-fprintf('\n========== IT1 vs IT2 ROBUSTNESS RESULTS ==========\n');
+fprintf('\n========== T1 vs IT2 ROBUSTNESS RESULTS ==========\n');
 
 % Prepare summary arrays for saving
 summaryMAE = zeros(length(SNR_levels), 2);
@@ -261,26 +261,26 @@ summaryP_w = zeros(length(SNR_levels), 1);
 for s_idx = 1:length(SNR_levels)
     fprintf('\n--- SNR = %d dB ---\n', SNR_levels(s_idx));
     
-    avgMAE1 = mean(MAE_IT1(:, s_idx));
+    avgMAE1 = mean(MAE_T1(:, s_idx));
     avgMAE2 = mean(MAE_IT2(:, s_idx));
-    avgRMSE1 = mean(RMSE_IT1(:, s_idx));
+    avgRMSE1 = mean(RMSE_T1(:, s_idx));
     avgRMSE2 = mean(RMSE_IT2(:, s_idx));
-    avgStd1 = mean(Std_IT1(:, s_idx));
+    avgStd1 = mean(Std_T1(:, s_idx));
     avgStd2 = mean(Std_IT2(:, s_idx));
     
     summaryMAE(s_idx, :) = [avgMAE1, avgMAE2];
     summaryRMSE(s_idx, :) = [avgRMSE1, avgRMSE2];
     summaryStd(s_idx, :) = [avgStd1, avgStd2];
     
-    fprintf('  IT1: MAE=%.4f, RMSE=%.4f, Mean Std=%.4f\n', avgMAE1, avgRMSE1, avgStd1);
+    fprintf('  T1: MAE=%.4f, RMSE=%.4f, Mean Std=%.4f\n', avgMAE1, avgRMSE1, avgStd1);
     fprintf('  IT2: MAE=%.4f, RMSE=%.4f, Mean Std=%.4f\n', avgMAE2, avgRMSE2, avgStd2);
     
     % Paired t-test on per-profile RMSE
-    diffRMSE = RMSE_IT1(:, s_idx) - RMSE_IT2(:, s_idx);
+    diffRMSE = RMSE_T1(:, s_idx) - RMSE_IT2(:, s_idx);
     [~, p_t] = ttest(diffRMSE);
     
     % Wilcoxon signed-rank test
-    p_w = signrank(RMSE_IT1(:, s_idx), RMSE_IT2(:, s_idx));
+    p_w = signrank(RMSE_T1(:, s_idx), RMSE_IT2(:, s_idx));
     
     summaryP_t(s_idx) = p_t;
     summaryP_w(s_idx) = p_w;
@@ -298,10 +298,10 @@ end
 fprintf('\nGenerating publication plots...\n');
 
 % 1) Boxplot of per-run RMSE
-figure('Name', 'Per-run RMSE: IT1 vs IT2', 'Color', 'w', 'Position', [100, 100, 800, 500]);
+figure('Name', 'Per-run RMSE: T1 vs IT2', 'Color', 'w', 'Position', [100, 100, 800, 500]);
 
-data_all = [RMSE_runs_IT1(:); RMSE_runs_IT2(:)];
-grp_system = [repmat({'IT1'}, M*length(SNR_levels), 1); repmat({'IT2'}, M*length(SNR_levels), 1)];
+data_all = [RMSE_runs_T1(:); RMSE_runs_IT2(:)];
+grp_system = [repmat({'T1'}, M*length(SNR_levels), 1); repmat({'IT2'}, M*length(SNR_levels), 1)];
 snr_labels = repmat(SNR_levels', M, 1);
 snr_labels = snr_labels(:);
 grp_snr = [snr_labels; snr_labels];
@@ -311,7 +311,7 @@ boxplot(data_all, {grp_system, grp_snr}, ...
     'FactorGap', [5, 1], ...
     'Widths', 0.8);
 ylabel('RMSE (PerformanceGrade)', 'FontSize', 12);
-title('Noise Robustness: IT1 vs IT2 (50 Monte Carlo runs per SNR)', 'FontSize', 13, 'FontWeight', 'bold');
+title('Noise Robustness: T1 vs IT2 (50 Monte Carlo runs per SNR)', 'FontSize', 13, 'FontWeight', 'bold');
 grid on;
 set(gca, 'FontSize', 11);
 exportgraphics(gcf, fullfile(outputDir, 'Noise_RMSE_Boxplot.png'), 'Resolution', 300);
@@ -319,20 +319,20 @@ fprintf('  Saved: Noise_RMSE_Boxplot.png\n');
 
 % 2) Mean RMSE vs SNR line plot
 figure('Name', 'Mean RMSE vs SNR', 'Color', 'w', 'Position', [100, 100, 600, 450]);
-meanRMSE_IT1 = mean(RMSE_runs_IT1);
+meanRMSE_T1 = mean(RMSE_runs_T1);
 meanRMSE_IT2 = mean(RMSE_runs_IT2);
-stdRMSE_IT1 = std(RMSE_runs_IT1);
+stdRMSE_T1 = std(RMSE_runs_T1);
 stdRMSE_IT2 = std(RMSE_runs_IT2);
 
-errorbar(SNR_levels, meanRMSE_IT1, stdRMSE_IT1, 'o-', 'Color', [0.2 0.4 0.6], ...
-    'LineWidth', 1.5, 'MarkerSize', 8, 'DisplayName', 'IT1');
+errorbar(SNR_levels, meanRMSE_T1, stdRMSE_T1, 'o-', 'Color', [0.2 0.4 0.6], ...
+    'LineWidth', 1.5, 'MarkerSize', 8, 'DisplayName', 'T1');
 hold on;
 errorbar(SNR_levels, meanRMSE_IT2, stdRMSE_IT2, 's--', 'Color', [0.8 0.4 0.2], ...
     'LineWidth', 1.5, 'MarkerSize', 8, 'DisplayName', 'IT2');
 set(gca, 'YScale', 'log');
 xlabel('SNR (dB)', 'FontSize', 12);
 ylabel('Mean RMSE (log scale)', 'FontSize', 12);
-title('IT1 vs IT2: RMSE vs Noise Level', 'FontSize', 13, 'FontWeight', 'bold');
+title('T1 vs IT2: RMSE vs Noise Level', 'FontSize', 13, 'FontWeight', 'bold');
 legend('Location', 'northeast', 'FontSize', 11);
 grid on;
 set(gca, 'FontSize', 11);
@@ -342,8 +342,8 @@ fprintf('  Saved: Noise_RMSE_vs_SNR.png\n');
 % 3) Standard deviation difference histogram (at SNR = 20 dB)
 sel = find(SNR_levels == 20, 1);
 if ~isempty(sel)
-    figure('Name', 'Std Difference (IT1 - IT2)', 'Color', 'w', 'Position', [100, 100, 600, 450]);
-    stdDiff = Std_IT1(:, sel) - Std_IT2(:, sel);
+    figure('Name', 'Std Difference (T1 - IT2)', 'Color', 'w', 'Position', [100, 100, 600, 450]);
+    stdDiff = Std_T1(:, sel) - Std_IT2(:, sel);
     histogram(stdDiff, 30, 'FaceColor', [0.4 0.6 0.8], 'EdgeColor', 'w');
     hold on;
     x_val = mean(stdDiff);
@@ -352,9 +352,9 @@ if ~isempty(sel)
     text(x_val, yl(2)*0.95, sprintf('Mean = %.3f', x_val), ...
         'Color', 'red', 'FontSize', 10, 'HorizontalAlignment', 'center');
     hold off;
-    xlabel('Std(IT1) - Std(IT2) (points)', 'FontSize', 12);
+    xlabel('Std(T1) - Std(IT2) (points)', 'FontSize', 12);
     ylabel('Number of faculty profiles', 'FontSize', 12);
-    title(sprintf('Output Variability Difference at SNR = 20 dB\n(Positive = IT1 more variable)'), ...
+    title(sprintf('Output Variability Difference at SNR = 20 dB\n(Positive = T1 more variable)'), ...
         'FontSize', 13, 'FontWeight', 'bold');
     grid on;
     set(gca, 'FontSize', 11);
@@ -364,15 +364,15 @@ end
 
 %% SAVE RESULTS
 save(fullfile(outputDir, 'Noise_Robustness_Results.mat'), ...
-    'SNR_levels', 'M', 'RMSE_runs_IT1', 'RMSE_runs_IT2', ...
-    'MAE_IT1', 'MAE_IT2', 'RMSE_IT1', 'RMSE_IT2', 'Std_IT1', 'Std_IT2');
+    'SNR_levels', 'M', 'RMSE_runs_T1', 'RMSE_runs_IT2', ...
+    'MAE_T1', 'MAE_IT2', 'RMSE_T1', 'RMSE_IT2', 'Std_T1', 'Std_IT2');
 
 % Save a CSV summary
 resultsTable = table(SNR_levels', summaryMAE(:,1), summaryMAE(:,2), ...
     summaryRMSE(:,1), summaryRMSE(:,2), summaryStd(:,1), summaryStd(:,2), ...
     summaryP_t, summaryP_w, ...
-    'VariableNames', {'SNR_dB', 'IT1_MAE', 'IT2_MAE', 'IT1_RMSE', 'IT2_RMSE', ...
-    'IT1_Std', 'IT2_Std', 'p_ttest', 'p_wilcoxon'});
+    'VariableNames', {'SNR_dB', 'T1_MAE', 'IT2_MAE', 'T1_RMSE', 'IT2_RMSE', ...
+    'T1_Std', 'IT2_Std', 'p_ttest', 'p_wilcoxon'});
 writetable(resultsTable, fullfile(outputDir, 'Noise_Robustness_Summary.csv'));
 fprintf('Saved: Noise_Robustness_Summary.csv\n');
 
@@ -380,13 +380,13 @@ fprintf('Saved: Noise_Robustness_Summary.csv\n');
 fprintf('\n=========================================\n');
 fprintf('          FINAL SUMMARY TABLE\n');
 fprintf('=========================================\n');
-fprintf('%-10s | %-15s | %-15s | %-10s | %-15s\n', 'SNR (dB)', 'IT1 RMSE', 'IT2 RMSE', 'Improv%', 'p-value');
+fprintf('%-10s | %-15s | %-15s | %-10s | %-15s\n', 'SNR (dB)', 'T1 RMSE', 'IT2 RMSE', 'Improv%', 'p-value');
 fprintf('----------|-----------------|-----------------|------------|-----------------\n');
 for s_idx = 1:length(SNR_levels)
-    avg1 = mean(RMSE_IT1(:, s_idx));
+    avg1 = mean(RMSE_T1(:, s_idx));
     avg2 = mean(RMSE_IT2(:, s_idx));
     imp = (avg1 - avg2) / avg1 * 100;
-    [~, p] = ttest(RMSE_IT1(:, s_idx) - RMSE_IT2(:, s_idx));
+    [~, p] = ttest(RMSE_T1(:, s_idx) - RMSE_IT2(:, s_idx));
     fprintf('%-10d | %-15.4f | %-15.4f | %-8.1f%% | %-15.4f\n', SNR_levels(s_idx), avg1, avg2, imp, p);
 end
 fprintf('=========================================\n');
@@ -396,13 +396,13 @@ fid = fopen(fullfile(outputDir, 'Noise_Robustness_Summary.txt'), 'w');
 fprintf(fid, '========================================\n');
 fprintf(fid, ' NOISE ROBUSTNESS EXPERIMENT SUMMARY\n');
 fprintf(fid, '========================================\n\n');
-fprintf(fid, '%-10s | %-15s | %-15s | %-10s | %-15s\n', 'SNR (dB)', 'IT1 RMSE', 'IT2 RMSE', 'Improv%', 'p-value');
+fprintf(fid, '%-10s | %-15s | %-15s | %-10s | %-15s\n', 'SNR (dB)', 'T1 RMSE', 'IT2 RMSE', 'Improv%', 'p-value');
 fprintf(fid, '----------|-----------------|-----------------|------------|-----------------\n');
 for s_idx = 1:length(SNR_levels)
-    avg1 = mean(RMSE_IT1(:, s_idx));
+    avg1 = mean(RMSE_T1(:, s_idx));
     avg2 = mean(RMSE_IT2(:, s_idx));
     imp = (avg1 - avg2) / avg1 * 100;
-    [~, p] = ttest(RMSE_IT1(:, s_idx) - RMSE_IT2(:, s_idx));
+    [~, p] = ttest(RMSE_T1(:, s_idx) - RMSE_IT2(:, s_idx));
     fprintf(fid, '%-10d | %-15.4f | %-15.4f | %-8.1f%% | %-15.4f\n', SNR_levels(s_idx), avg1, avg2, imp, p);
 end
 fprintf(fid, '\nAll differences statistically significant at p < 0.001 (both t-test and Wilcoxon).\n');
