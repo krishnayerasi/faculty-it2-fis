@@ -1,5 +1,5 @@
 % =========================================================================
-% IT1_SYSTEM.m
+% T1_SYSTEM.m
 % Type-1 Hierarchical Sugeno Fuzzy System for Faculty Evaluation
 % Complete validation: output distribution, sensitivity, monotonicity, 
 % face validation, correlation analysis
@@ -37,7 +37,7 @@ CL = min(100, FDP_long+FDP_short+MOOCs+Pedagogy+Industry+NewCourse+NewTool);
 SyntheticData = [AM, AC, SEP, RC, CL];
 InputNames = {'AM', 'AC', 'SEP', 'RC', 'CL'};
 
-%% 2. BUILD HIERARCHICAL IT1 FIS
+%% 2. BUILD HIERARCHICAL T1 FIS
 
 % Membership function parameters
 mfLow      = [0  0  25 45];
@@ -122,28 +122,28 @@ fis_Master = addRule(fis_Master, ruleList_Master);
 
 %% 3. EVALUATE ALL 1000 FACULTY PROFILES
 Stage1_Data = [AM, SEP, CL];
-TeachingScores_IT1 = evalfis(fis_Teach, Stage1_Data);
-Master_Data = [TeachingScores_IT1, AC, RC];
-PerformanceGrades_IT1 = evalfis(fis_Master, Master_Data);
+TeachingScores_T1 = evalfis(fis_Teach, Stage1_Data);
+Master_Data = [TeachingScores_T1, AC, RC];
+PerformanceGrades_T1 = evalfis(fis_Master, Master_Data);
 
 %% 4. OUTPUT DISTRIBUTION ANALYSIS
-fprintf('\n========== IT1 OUTPUT DISTRIBUTION ==========\n');
+fprintf('\n========== T1 OUTPUT DISTRIBUTION ==========\n');
 fprintf('TeachingScore:  Mean=%.2f, Std=%.2f, Min=%.2f, Max=%.2f, Skew=%.2f\n', ...
-    mean(TeachingScores_IT1), std(TeachingScores_IT1), ...
-    min(TeachingScores_IT1), max(TeachingScores_IT1), skewness(TeachingScores_IT1));
+    mean(TeachingScores_T1), std(TeachingScores_T1), ...
+    min(TeachingScores_T1), max(TeachingScores_T1), skewness(TeachingScores_T1));
 fprintf('PerformanceGrade: Mean=%.2f, Std=%.2f, Min=%.2f, Max=%.2f, Skew=%.2f\n', ...
-    mean(PerformanceGrades_IT1), std(PerformanceGrades_IT1), ...
-    min(PerformanceGrades_IT1), max(PerformanceGrades_IT1), skewness(PerformanceGrades_IT1));
+    mean(PerformanceGrades_T1), std(PerformanceGrades_T1), ...
+    min(PerformanceGrades_T1), max(PerformanceGrades_T1), skewness(PerformanceGrades_T1));
 
 % Histogram
 figure('Color','w');
 subplot(1,2,1);
-histogram(TeachingScores_IT1, 20, 'FaceColor', [0.2 0.5 0.8]);
-xlabel('TeachingScore'); ylabel('Frequency'); title('IT1 TeachingScore Distribution');
+histogram(TeachingScores_T1, 20, 'FaceColor', [0.2 0.5 0.8]);
+xlabel('TeachingScore'); ylabel('Frequency'); title('T1 TeachingScore Distribution');
 subplot(1,2,2);
-histogram(PerformanceGrades_IT1, 20, 'FaceColor', [0.8 0.4 0.2]);
-xlabel('PerformanceGrade'); ylabel('Frequency'); title('IT1 PerformanceGrade Distribution');
-exportgraphics(gcf, 'IT1_OutputDistribution.png', 'Resolution', 300);
+histogram(PerformanceGrades_T1, 20, 'FaceColor', [0.8 0.4 0.2]);
+xlabel('PerformanceGrade'); ylabel('Frequency'); title('T1 PerformanceGrade Distribution');
+exportgraphics(gcf, 'T1_OutputDistribution.png', 'Resolution', 300);
 
 %% 5. SENSITIVITY ANALYSIS (one input at a time)
 baseline = mean(SyntheticData, 1);
@@ -180,8 +180,8 @@ for i = 1:5
         'LineWidth', 1.5, 'DisplayName', InputNames{i});
 end
 xlabel('Input Value'); ylabel('PerformanceGrade');
-title('IT1 Sensitivity Analysis'); legend('Location','best'); grid on;
-exportgraphics(gcf, 'IT1_Sensitivity.png', 'Resolution', 300);
+title('T1 Sensitivity Analysis'); legend('Location','best'); grid on;
+exportgraphics(gcf, 'T1_Sensitivity.png', 'Resolution', 300);
 
 %% 6. FACE VALIDATION (10 Edge Cases)
 edgeCases = [
@@ -234,7 +234,7 @@ end
 fprintf('Face Validation: Stage1=%d/10, Stage2=%d/10\n', pass1, pass2);
 
 %% 7. CORRELATION ANALYSIS
-AllVars = [SyntheticData, TeachingScores_IT1, PerformanceGrades_IT1];
+AllVars = [SyntheticData, TeachingScores_T1, PerformanceGrades_T1];
 AllNames = [InputNames, {'TeachingScore','PerformanceGrade'}];
 R = corr(AllVars);
 fprintf('\n--- Correlation with PerformanceGrade ---\n');
@@ -243,16 +243,16 @@ for i = 1:5
 end
 
 figure('Color','w');
-heatmap(AllNames, AllNames, round(R,2), 'Title', 'IT1 Correlation Heatmap', 'Colormap', parula);
-exportgraphics(gcf, 'IT1_CorrelationHeatmap.png', 'Resolution', 300);
+heatmap(AllNames, AllNames, round(R,2), 'Title', 'T1 Correlation Heatmap', 'Colormap', parula);
+exportgraphics(gcf, 'T1_CorrelationHeatmap.png', 'Resolution', 300);
 
 %% 8. SAVE RESULTS
-save('IT1_Results.mat', 'TeachingScores_IT1', 'PerformanceGrades_IT1', ...
+save('T1_Results.mat', 'TeachingScores_T1', 'PerformanceGrades_T1', ...
     'AM', 'AC', 'SEP', 'RC', 'CL', 'SyntheticData', 'InputNames');
-writetable(array2table([SyntheticData, TeachingScores_IT1, PerformanceGrades_IT1], ...
-    'VariableNames', [InputNames, {'TeachingScore','PerformanceGrade'}]), 'IT1_Dataset.csv');
+writetable(array2table([SyntheticData, TeachingScores_T1, PerformanceGrades_T1], ...
+    'VariableNames', [InputNames, {'TeachingScore','PerformanceGrade'}]), 'T1_Dataset.csv');
 
-fprintf('\n=== IT1 System Complete ===\n');
+fprintf('\n=== T1 System Complete ===\n');
 
 % =========================================================================
 % LOCAL FUNCTIONS
@@ -277,13 +277,13 @@ end
 function idx = nearestIndex(val, centers)
     [~, idx] = min(abs(val - centers));
 end
-% Ensure output directory exists on PC (Documents/IT1_Outputs)
-outDir = fullfile(getenv('USERPROFILE'), 'Documents', 'IT1_Outputs');
+% Ensure output directory exists on PC (Documents/T1_Outputs)
+outDir = fullfile(getenv('USERPROFILE'), 'Documents', 'T1_Outputs');
 if ~exist(outDir, 'dir'), mkdir(outDir); end
 
 % Move previously exported images and saved files into outDir if they exist
-filesToMove = { 'IT1_OutputDistribution.png', 'IT1_Sensitivity.png', 'IT1_CorrelationHeatmap.png', ...
-                'IT1_Results.mat', 'IT1_Dataset.csv' };
+filesToMove = { 'T1_OutputDistribution.png', 'T1_Sensitivity.png', 'T1_CorrelationHeatmap.png', ...
+                'T1_Results.mat', 'T1_Dataset.csv' };
 for i = 1:numel(filesToMove)
     if exist(filesToMove{i}, 'file')
         try
@@ -308,9 +308,9 @@ for i = 1:numel(figs)
 end
 
 % Save final results again into outDir to ensure presence
-save(fullfile(outDir, 'IT1_Results.mat'), 'TeachingScores_IT1', 'PerformanceGrades_IT1', ...
+save(fullfile(outDir, 'T1_Results.mat'), 'TeachingScores_T1', 'PerformanceGrades_T1', ...
     'AM', 'AC', 'SEP', 'RC', 'CL', 'SyntheticData', 'InputNames');
-writetable(array2table([SyntheticData, TeachingScores_IT1, PerformanceGrades_IT1], ...
-    'VariableNames', [InputNames, {'TeachingScore','PerformanceGrade'}]), fullfile(outDir, 'IT1_Dataset.csv'));
+writetable(array2table([SyntheticData, TeachingScores_T1, PerformanceGrades_T1], ...
+    'VariableNames', [InputNames, {'TeachingScore','PerformanceGrade'}]), fullfile(outDir, 'T1_Dataset.csv'));
 
 fprintf('All outputs saved to: %s\n', outDir);
