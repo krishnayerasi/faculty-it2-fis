@@ -14,7 +14,7 @@ if ~exist(outputDir, 'dir')
 end
 fprintf('Output folder: %s\n\n', fullfile(pwd, outputDir));
 
-%% 1. GENERATE SYNTHETIC DATASET (identical to IT1)
+%% 1. GENERATE SYNTHETIC DATASET (identical to T1)
 rng(42);
 N = 1000;
 
