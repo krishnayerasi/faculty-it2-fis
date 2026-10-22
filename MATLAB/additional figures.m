@@ -26,7 +26,13 @@ set(0, 'DefaultTextFontSize', 11);
 %  FIGURE 2 — MEMBERSHIP FUNCTIONS (IT1 vs IT2)
 % =========================================================
 x = 0:0.5:100;
-mfBase = {[0 0 25 45], [25 45 65], [45 65 85], [65 85 100 100]};
+
+% NOTE: All entries are 4-element trapezoids [a b c d].
+% Triangular MFs are stored as degenerate trapezoids (b == c):
+%   [25 45 65] -> [25 45 45 65]
+%   [45 65 85] -> [45 65 65 85]
+mfBase = {[0 0 25 45], [25 45 45 65], [45 65 65 85], [65 85 100 100]};
+
 names = {'Low','Moderate','High','VeryHigh'};
 colors = [0.85 0.33 0.10;   % Low     - orange
           0.93 0.69 0.13;   % Moderate- yellow
