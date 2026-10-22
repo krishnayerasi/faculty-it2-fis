@@ -1,13 +1,13 @@
 % =========================================================================
-% IT1_SYSTEM.m (UPGRADED – SURFACE PLOTS + RULE COVERAGE)
+% T1_SYSTEM.m (UPGRADED – SURFACE PLOTS + RULE COVERAGE)
 % Type-1 Hierarchical Sugeno Fuzzy System for Faculty Evaluation
 % Saves all figures (300 DPI), datasets, models, surface plots,
-% rule coverage report, and summary into IT1_Outputs/
+% rule coverage report, and summary into T1_Outputs/
 % =========================================================================
 clear; clc; close all;
 
 %% 0. CREATE OUTPUT FOLDER
-outputDir = 'IT1_Outputs';
+outputDir = 'T1_Outputs';
 if ~exist(outputDir, 'dir')
     mkdir(outputDir);
 end
@@ -40,7 +40,7 @@ CL = min(100, FDP_long+FDP_short+MOOCs+Pedagogy+Industry+NewCourse+NewTool);
 SyntheticData = [AM, AC, SEP, RC, CL];
 InputNames = {'AM', 'AC', 'SEP', 'RC', 'CL'};
 
-%% 2. BUILD HIERARCHICAL IT1 FIS
+%% 2. BUILD HIERARCHICAL T1 FIS
 
 mfLow      = [0  0  25 45];
 mfModerate = [25 45 65];
@@ -108,8 +108,8 @@ end
 fis_Master = addRule(fis_Master, ruleList_Master);
 
 % Save FIS models
-writeFIS(fis_Teach, fullfile(outputDir, 'fis_Teach_IT1.fis'));
-writeFIS(fis_Master, fullfile(outputDir, 'fis_Master_IT1.fis'));
+writeFIS(fis_Teach, fullfile(outputDir, 'fis_Teach_T1.fis'));
+writeFIS(fis_Master, fullfile(outputDir, 'fis_Master_T1.fis'));
 
 %% 3. RULE COVERAGE VERIFICATION
 mfMidpoints = [12.5 45 65 92.5];  % representative point inside each MF
@@ -139,29 +139,29 @@ end
 
 %% 4. EVALUATE ALL 1000 FACULTY PROFILES
 Stage1_Data = [AM, SEP, CL];
-TeachingScores_IT1 = evalfis(fis_Teach, Stage1_Data);
-Master_Data = [TeachingScores_IT1, AC, RC];
-PerformanceGrades_IT1 = evalfis(fis_Master, Master_Data);
+TeachingScores_T1 = evalfis(fis_Teach, Stage1_Data);
+Master_Data = [TeachingScores_T1, AC, RC];
+PerformanceGrades_T1 = evalfis(fis_Master, Master_Data);
 
 %% 5. SAVE DATASETS
-T1 = table(AM, SEP, CL, TeachingScores_IT1, ...
+T1 = table(AM, SEP, CL, TeachingScores_T1, ...
     'VariableNames', {'AM','SEP','CL','TeachingScore'});
-writetable(T1, fullfile(outputDir, 'IT1_TeachingScore_Dataset.csv'));
-fprintf('Saved: IT1_TeachingScore_Dataset.csv (1000 rows)\n');
+writetable(T1, fullfile(outputDir, 'T1_TeachingScore_Dataset.csv'));
+fprintf('Saved: T1_TeachingScore_Dataset.csv (1000 rows)\n');
 
-T2 = array2table([SyntheticData, TeachingScores_IT1, PerformanceGrades_IT1], ...
+T2 = array2table([SyntheticData, TeachingScores_T1, PerformanceGrades_T1], ...
     'VariableNames', [InputNames, {'TeachingScore','PerformanceGrade'}]);
-writetable(T2, fullfile(outputDir, 'IT1_PerformanceGrade_Dataset.csv'));
-fprintf('Saved: IT1_PerformanceGrade_Dataset.csv (1000 rows)\n');
+writetable(T2, fullfile(outputDir, 'T1_PerformanceGrade_Dataset.csv'));
+fprintf('Saved: T1_PerformanceGrade_Dataset.csv (1000 rows)\n');
 
 %% 6. OUTPUT DISTRIBUTION ANALYSIS
-fprintf('\n========== IT1 OUTPUT DISTRIBUTION ==========\n');
-ts_mean = mean(TeachingScores_IT1); ts_std = std(TeachingScores_IT1);
-ts_min = min(TeachingScores_IT1); ts_max = max(TeachingScores_IT1);
-ts_skew = skewness(TeachingScores_IT1); ts_kurt = kurtosis(TeachingScores_IT1);
-pg_mean = mean(PerformanceGrades_IT1); pg_std = std(PerformanceGrades_IT1);
-pg_min = min(PerformanceGrades_IT1); pg_max = max(PerformanceGrades_IT1);
-pg_skew = skewness(PerformanceGrades_IT1); pg_kurt = kurtosis(PerformanceGrades_IT1);
+fprintf('\n========== T1 OUTPUT DISTRIBUTION ==========\n');
+ts_mean = mean(TeachingScores_T1); ts_std = std(TeachingScores_T1);
+ts_min = min(TeachingScores_T1); ts_max = max(TeachingScores_T1);
+ts_skew = skewness(TeachingScores_T1); ts_kurt = kurtosis(TeachingScores_T1);
+pg_mean = mean(PerformanceGrades_T1); pg_std = std(PerformanceGrades_T1);
+pg_min = min(PerformanceGrades_T1); pg_max = max(PerformanceGrades_T1);
+pg_skew = skewness(PerformanceGrades_T1); pg_kurt = kurtosis(PerformanceGrades_T1);
 fprintf('TeachingScore:  Mean=%.2f, Std=%.2f, Min=%.2f, Max=%.2f, Skew=%.2f, Kurt=%.2f\n', ...
     ts_mean, ts_std, ts_min, ts_max, ts_skew, ts_kurt);
 fprintf('PerformanceGrade: Mean=%.2f, Std=%.2f, Min=%.2f, Max=%.2f, Skew=%.2f, Kurt=%.2f\n', ...
@@ -169,12 +169,12 @@ fprintf('PerformanceGrade: Mean=%.2f, Std=%.2f, Min=%.2f, Max=%.2f, Skew=%.2f, K
 
 figure('Color','w');
 subplot(1,2,1);
-histogram(TeachingScores_IT1, 20, 'FaceColor', [0.2 0.5 0.8]);
-xlabel('TeachingScore'); ylabel('Frequency'); title('IT1 TeachingScore Distribution');
+histogram(TeachingScores_T1, 20, 'FaceColor', [0.2 0.5 0.8]);
+xlabel('TeachingScore'); ylabel('Frequency'); title('T1 TeachingScore Distribution');
 subplot(1,2,2);
-histogram(PerformanceGrades_IT1, 20, 'FaceColor', [0.8 0.4 0.2]);
-xlabel('PerformanceGrade'); ylabel('Frequency'); title('IT1 PerformanceGrade Distribution');
-exportgraphics(gcf, fullfile(outputDir, 'IT1_OutputDistribution.png'), 'Resolution', 300);
+histogram(PerformanceGrades_T1, 20, 'FaceColor', [0.8 0.4 0.2]);
+xlabel('PerformanceGrade'); ylabel('Frequency'); title('T1 PerformanceGrade Distribution');
+exportgraphics(gcf, fullfile(outputDir, 'T1_OutputDistribution.png'), 'Resolution', 300);
 
 %% 7. SENSITIVITY ANALYSIS
 baseline = mean(SyntheticData, 1);
@@ -197,8 +197,8 @@ end
 
 SensTable = array2table([sweepVals', sensResults], ...
     'VariableNames', ['SweepValue', InputNames]);
-writetable(SensTable, fullfile(outputDir, 'IT1_Sensitivity.csv'));
-fprintf('Saved: IT1_Sensitivity.csv\n');
+writetable(SensTable, fullfile(outputDir, 'T1_Sensitivity.csv'));
+fprintf('Saved: T1_Sensitivity.csv\n');
 
 fprintf('\n--- Monotonicity Check ---\n');
 for varIdx = [1 3 5 2 4]
@@ -214,8 +214,8 @@ for i = 1:5
         'LineWidth', 1.5, 'DisplayName', InputNames{i});
 end
 xlabel('Input Value'); ylabel('PerformanceGrade');
-title('IT1 Sensitivity Analysis'); legend('Location','best'); grid on;
-exportgraphics(gcf, fullfile(outputDir, 'IT1_Sensitivity.png'), 'Resolution', 300);
+title('T1 Sensitivity Analysis'); legend('Location','best'); grid on;
+exportgraphics(gcf, fullfile(outputDir, 'T1_Sensitivity.png'), 'Resolution', 300);
 
 %% 8. SURFACE PLOTS (Master Stage)
 fprintf('\n--- Generating Surface Plots ---\n');
@@ -233,10 +233,10 @@ end
 figure('Color','w');
 surf(TS, RC, Z1, 'EdgeColor', 'none');
 xlabel('TeachingScore'); ylabel('RC'); zlabel('PerformanceGrade');
-title(sprintf('IT1 Surface: PerformanceGrade vs TeachingScore & RC (AC = %.1f)', ac_fixed));
+title(sprintf('T1 Surface: PerformanceGrade vs TeachingScore & RC (AC = %.1f)', ac_fixed));
 colormap jet; colorbar;
-exportgraphics(gcf, fullfile(outputDir, 'IT1_Surface_Teach_RC.png'), 'Resolution', 300);
-fprintf('Saved: IT1_Surface_Teach_RC.png\n');
+exportgraphics(gcf, fullfile(outputDir, 'T1_Surface_Teach_RC.png'), 'Resolution', 300);
+fprintf('Saved: T1_Surface_Teach_RC.png\n');
 
 % Surface 2: TeachingScore vs AC, RC fixed
 [TS2, AC2] = meshgrid(0:5:100, 0:5:100);
@@ -250,10 +250,10 @@ end
 figure('Color','w');
 surf(TS2, AC2, Z2, 'EdgeColor', 'none');
 xlabel('TeachingScore'); ylabel('AC'); zlabel('PerformanceGrade');
-title(sprintf('IT1 Surface: PerformanceGrade vs TeachingScore & AC (RC = %.1f)', rc_fixed));
+title(sprintf('T1 Surface: PerformanceGrade vs TeachingScore & AC (RC = %.1f)', rc_fixed));
 colormap jet; colorbar;
-exportgraphics(gcf, fullfile(outputDir, 'IT1_Surface_Teach_AC.png'), 'Resolution', 300);
-fprintf('Saved: IT1_Surface_Teach_AC.png\n');
+exportgraphics(gcf, fullfile(outputDir, 'T1_Surface_Teach_AC.png'), 'Resolution', 300);
+fprintf('Saved: T1_Surface_Teach_AC.png\n');
 % Surface 3: PerformanceGrade vs (AC, RC) with TeachingScore fixed at baseline
 [AC3, RC3] = meshgrid(0:5:100, 0:5:100);
 ts_fixed = baseline(1);   % mean TeachingScore (approx 66.8)
@@ -266,10 +266,10 @@ end
 figure('Color','w');
 surf(AC3, RC3, Z3, 'EdgeColor', 'none');
 xlabel('AC'); ylabel('RC'); zlabel('PerformanceGrade');
-title(sprintf('IT1 Surface: PerformanceGrade vs AC & RC (TeachingScore = %.1f)', ts_fixed));
+title(sprintf('T1 Surface: PerformanceGrade vs AC & RC (TeachingScore = %.1f)', ts_fixed));
 colormap jet; colorbar;
-exportgraphics(gcf, fullfile(outputDir, 'IT1_Surface_AC_RC.png'), 'Resolution', 300);
-fprintf('Saved: IT1_Surface_AC_RC.png\n');
+exportgraphics(gcf, fullfile(outputDir, 'T1_Surface_AC_RC.png'), 'Resolution', 300);
+fprintf('Saved: T1_Surface_AC_RC.png\n');
 % TeachingScore vs (AM, SEP) with CL fixed at baseline
 [AM_s, SEP_s] = meshgrid(0:5:100, 0:5:100);
 cl_fixed = baseline(5);   % mean CL
@@ -282,9 +282,9 @@ end
 figure('Color','w');
 surf(AM_s, SEP_s, Zt, 'EdgeColor', 'none');
 xlabel('AM'); ylabel('SEP'); zlabel('TeachingScore');
-title(sprintf('IT1 Surface: TeachingScore vs AM & SEP (CL = %.1f)', cl_fixed));
+title(sprintf('T1 Surface: TeachingScore vs AM & SEP (CL = %.1f)', cl_fixed));
 colormap jet; colorbar;
-exportgraphics(gcf, fullfile(outputDir, 'IT1_Surface_Teach_AM_SEP.png'), 'Resolution', 300);
+exportgraphics(gcf, fullfile(outputDir, 'T1_Surface_Teach_AM_SEP.png'), 'Resolution', 300);
 %% 9. FACE VALIDATION (10 Edge Cases)
 edgeCases = [
     30 30 30  50  95;
@@ -338,11 +338,11 @@ fprintf('Face Validation: Stage1=%d/10, Stage2=%d/10\n', pass1, pass2);
 EdgeTable = array2table(edgeResults, 'VariableNames', ...
     {'AM','SEP','CL','AC','RC','TeachingScore','PerformanceGrade'});
 EdgeTable.Description = edgeLabels';
-writetable(EdgeTable, fullfile(outputDir, 'IT1_FaceValidation_EdgeCases.csv'));
-fprintf('Saved: IT1_FaceValidation_EdgeCases.csv\n');
+writetable(EdgeTable, fullfile(outputDir, 'T1_FaceValidation_EdgeCases.csv'));
+fprintf('Saved: T1_FaceValidation_EdgeCases.csv\n');
 
 %% 10. CORRELATION ANALYSIS
-AllVars = [SyntheticData, TeachingScores_IT1, PerformanceGrades_IT1];
+AllVars = [SyntheticData, TeachingScores_T1, PerformanceGrades_T1];
 AllNames = [InputNames, {'TeachingScore','PerformanceGrade'}];
 R = corr(AllVars);
 fprintf('\n--- Correlation with PerformanceGrade ---\n');
@@ -351,19 +351,19 @@ for i = 1:5
 end
 
 CorrTable = array2table(R, 'VariableNames', AllNames, 'RowNames', AllNames);
-writetable(CorrTable, fullfile(outputDir, 'IT1_CorrelationMatrix.csv'), 'WriteRowNames', true);
-fprintf('Saved: IT1_CorrelationMatrix.csv\n');
+writetable(CorrTable, fullfile(outputDir, 'T1_CorrelationMatrix.csv'), 'WriteRowNames', true);
+fprintf('Saved: T1_CorrelationMatrix.csv\n');
 
 figure('Color','w');
-heatmap(AllNames, AllNames, round(R,2), 'Title', 'IT1 Correlation Heatmap', 'Colormap', parula);
-exportgraphics(gcf, fullfile(outputDir, 'IT1_CorrelationHeatmap.png'), 'Resolution', 300);
+heatmap(AllNames, AllNames, round(R,2), 'Title', 'T1 Correlation Heatmap', 'Colormap', parula);
+exportgraphics(gcf, fullfile(outputDir, 'T1_CorrelationHeatmap.png'), 'Resolution', 300);
 
 %% 11. SAVE WORKSPACE AND SUMMARY REPORT
-save(fullfile(outputDir, 'IT1_Results.mat'));
+save(fullfile(outputDir, 'T1_Results.mat'));
 
-fid = fopen(fullfile(outputDir, 'IT1_Summary.txt'), 'w');
+fid = fopen(fullfile(outputDir, 'T1_Summary.txt'), 'w');
 fprintf(fid, '========================================\n');
-fprintf(fid, ' IT1 SYSTEM SUMMARY REPORT\n');
+fprintf(fid, ' T1 SYSTEM SUMMARY REPORT\n');
 fprintf(fid, '========================================\n\n');
 fprintf(fid, 'Rule Coverage:\n');
 fprintf(fid, '  Stage-1: %d/64 rules fire correctly\n', 64-badRules1);
@@ -387,10 +387,10 @@ for i = 1:5
     fprintf(fid, '  %s: r=%.3f\n', InputNames{i}, R(i,7));
 end
 fclose(fid);
-fprintf('Saved: IT1_Summary.txt\n');
+fprintf('Saved: T1_Summary.txt\n');
 
 fprintf('\n========================================\n');
-fprintf(' IT1 System Complete\n');
+fprintf(' T1 System Complete\n');
 fprintf(' All outputs saved in: %s\n', fullfile(pwd, outputDir));
 fprintf('========================================\n');
 
