@@ -1,5 +1,5 @@
 [System]
-Name='fis_Master_IT1'
+Name='fis_Master_T1'
 Type='sugeno'
 Version=2.0
 NumInputs=3
