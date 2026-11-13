@@ -1,10 +1,10 @@
 % =========================================================================
 % Additional_Figures.m
 % Generates:
-%   Fig2_MembershipFunctions.png / .pdf  – IT1 vs IT2 membership functions
+%   Fig2_MembershipFunctions.png / .pdf  – T1 vs IT2 membership functions
 %   Fig11_Input_Boxplots.png      / .pdf – Distribution of the 5 input KPIs
 %
-% Standalone script. Does NOT modify IT1_System.m or IT2_System.m.
+% Standalone script. Does NOT modify T1_System.m or IT2_System.m.
 % Outputs saved in Additional_Figures/ at 600 DPI (PNG) and vector (PDF).
 % =========================================================================
 clear; clc; close all;
@@ -23,7 +23,7 @@ set(0, 'DefaultTextFontName', 'Helvetica');
 set(0, 'DefaultTextFontSize', 11);
 
 %% =========================================================
-%  FIGURE 2 — MEMBERSHIP FUNCTIONS (IT1 vs IT2)
+%  FIGURE 2 — MEMBERSHIP FUNCTIONS (T1 vs IT2)
 % =========================================================
 x = 0:0.5:100;
 
@@ -48,11 +48,11 @@ idx = 0;
 for k = 1:4
     a = mfBase{k}(1); b = mfBase{k}(2); c = mfBase{k}(3); d = mfBase{k}(4);
 
-    % IT1 crisp
+    % T1 crisp
     idx = idx + 1;
     hLeg(idx) = plot(x, trapmf(x, mfBase{k}), '--', 'Color', colors(k,:), ...
         'LineWidth', 1.4);
-    legLabels{idx} = sprintf('%s (IT1)', names{k});
+    legLabels{idx} = sprintf('%s (T1)', names{k});
 
     % IT2 UMF
     umf = [max(a-delta,0), max(b-delta,0), min(c+delta,100), min(d+delta,100)];
@@ -74,7 +74,7 @@ for k = 1:4
 end
 xlabel('Input Value (0-100)');
 ylabel('Membership Degree');
-title('Membership Functions: IT1 (dashed) vs IT2 UMF (solid) and LMF (dotted), \delta = 6');
+title('Membership Functions: T1 (dashed) vs IT2 UMF (solid) and LMF (dotted), \delta = 6');
 legend(hLeg, legLabels, 'Location','eastoutside','FontSize',8,'NumColumns',1);
 grid on;
 box on;
